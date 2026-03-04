@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/llklkl/imgrab/internal/docker"
 	"github.com/llklkl/imgrab/internal/registry"
 	"github.com/spf13/cobra"
 )
@@ -49,7 +50,11 @@ var pullCmd = &cobra.Command{
 		fmt.Printf("\nImage saved to: %s\n", outputPath)
 
 		if shouldImport {
-			fmt.Println("Importing to Docker...")
+			fmt.Println("\nImporting to Docker...")
+			if err := docker.ImportTarToDocker(outputPath); err != nil {
+				return fmt.Errorf("import to docker: %w", err)
+			}
+			fmt.Println("Successfully imported to Docker!")
 		}
 
 		return nil

@@ -35,17 +35,18 @@
 | 4.3 | 实现进度条展示 | P0 | completed |
 | 4.4 | 实现保存到指定目录 | P0 | completed |
 | 4.5 | 实现分层并行拉取（可选优化） | P1 | pending |
-| 4.6 | 实现自动导入 Docker 功能 | P1 | pending |
+| 4.6 | 实现自动导入 Docker 功能 | P1 | completed |
 
 ## 阶段五：TUI 界面开发
 
 | 任务 | 描述 | 优先级 | 状态 |
 |------|------|--------|------|
-| 5.1 | 搭建 bubbletea TUI 基础框架 | P0 | in_progress |
-| 5.2 | 实现镜像搜索列表界面 | P0 | pending |
-| 5.3 | 实现镜像版本列表界面 | P0 | pending |
-| 5.4 | 实现确认下载弹窗（含架构选择） | P0 | pending |
-| 5.5 | 实现下载进度展示界面 | P0 | pending |
+| 5.1 | 搭建 bubbletea TUI 基础框架 | P0 | completed |
+| 5.2 | 实现镜像搜索列表界面 | P0 | completed |
+| 5.3 | 实现镜像版本列表界面 | P0 | completed |
+| 5.4 | 实现确认下载弹窗（含架构选择） | P0 | completed |
+| 5.5 | 实现下载进度展示界面 | P0 | completed |
+| 5.6 | 集成 TUI 到 search 命令 | P0 | completed |
 
 ## 阶段六：测试与优化
 
