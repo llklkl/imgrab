@@ -9,11 +9,13 @@ import (
 )
 
 type SearchResult struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
+	Name        string `json:"repo_name"`
+	Description string `json:"short_description"`
 	Stars       int    `json:"star_count"`
+	PullCount   int64  `json:"pull_count"`
 	IsOfficial  bool   `json:"is_official"`
 	IsAutomated bool   `json:"is_automated"`
+	RepoOwner   string `json:"repo_owner"`
 }
 
 type SearchResponse struct {
@@ -117,4 +119,17 @@ func containsSlash(s string) bool {
 		}
 	}
 	return false
+}
+
+func FormatNumber(n int64) string {
+	switch {
+	case n >= 1000000000:
+		return fmt.Sprintf("%.1fB", float64(n)/1000000000)
+	case n >= 1000000:
+		return fmt.Sprintf("%.1fM", float64(n)/1000000)
+	case n >= 1000:
+		return fmt.Sprintf("%.1fK", float64(n)/1000)
+	default:
+		return fmt.Sprintf("%d", n)
+	}
 }

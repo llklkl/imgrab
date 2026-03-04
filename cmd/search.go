@@ -39,6 +39,9 @@ var searchCmd = &cobra.Command{
 		fmt.Printf("Found %d results:\n\n", result.Count)
 		for i, item := range result.Results {
 			fmt.Printf("%d. %s\n", i+1, item.Name)
+			if item.RepoOwner != "" {
+				fmt.Printf("   Owner: %s\n", item.RepoOwner)
+			}
 			if item.Description != "" {
 				fmt.Printf("   %s\n", item.Description)
 			}
@@ -49,7 +52,7 @@ var searchCmd = &cobra.Command{
 			if item.IsAutomated {
 				badge += " [AUTOMATED]"
 			}
-			fmt.Printf("   Stars: %d%s\n\n", item.Stars, badge)
+			fmt.Printf("   Stars: %d | Pulls: %s%s\n\n", item.Stars, registry.FormatNumber(item.PullCount), badge)
 		}
 
 		return nil

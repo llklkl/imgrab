@@ -20,11 +20,24 @@ type searchItem struct {
 	name        string
 	description string
 	stars       int
+	pullCount   int64
 	isOfficial  bool
+	owner       string
 }
 
-func (i searchItem) Title() string       { return i.name }
-func (i searchItem) Description() string { return i.description }
+func (i searchItem) Title() string { return i.name }
+func (i searchItem) Description() string {
+	desc := i.description
+	parts := []string{}
+	if i.owner != "" {
+		parts = append(parts, fmt.Sprintf("Owner: %s", i.owner))
+	}
+	parts = append(parts, fmt.Sprintf("Stars: %d | Pulls: %s", i.stars, registry.FormatNumber(i.pullCount)))
+	if desc != "" {
+		parts = append(parts, desc)
+	}
+	return strings.Join(parts, " | ")
+}
 func (i searchItem) FilterValue() string { return i.name }
 
 type searchModel struct {
@@ -160,7 +173,9 @@ func (m searchModel) searchImages(query string) tea.Cmd {
 				name:        r.Name,
 				description: r.Description,
 				stars:       r.Stars,
+				pullCount:   r.PullCount,
 				isOfficial:  r.IsOfficial,
+				owner:       r.RepoOwner,
 			})
 		}
 
