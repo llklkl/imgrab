@@ -6,15 +6,18 @@ import (
 
 	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 
 	"github.com/llklkl/imgrab/internal/registry"
 )
 
-type tagItem string
+type tagItem struct {
+	name string
+}
 
-func (i tagItem) Title() string       { return string(i) }
+func (i tagItem) Title() string       { return i.name }
 func (i tagItem) Description() string { return "" }
-func (i tagItem) FilterValue() string { return string(i) }
+func (i tagItem) FilterValue() string { return i.name }
 
 type tagsModel struct {
 	repository string
@@ -56,7 +59,7 @@ func (m tagsModel) Update(msg tea.Msg) (tagsModel, tea.Cmd) {
 				return m, nil
 			}
 			if i, ok := m.list.SelectedItem().(tagItem); ok {
-				m.selected = string(i)
+				m.selected = i.name
 			}
 		case "esc":
 			m.back = true
@@ -73,14 +76,14 @@ func (m tagsModel) Update(msg tea.Msg) (tagsModel, tea.Cmd) {
 		m.err = nil
 		items := make([]list.Item, len(msg.tags))
 		for i, t := range msg.tags {
-			items[i] = tagItem(t)
+			items[i] = tagItem{name: t}
 		}
 		m.list.SetItems(items)
 		return m, nil
 
 	case tea.WindowSizeMsg:
 		h, v := docStyle.GetFrameSize()
-		m.list.SetSize(msg.Width-h, msg.Height-v-3)
+		m.list.SetSize(msg.Width-h, msg.Height-v-5)
 	}
 
 	m.list, cmd = m.list.Update(msg)
@@ -99,7 +102,7 @@ func (m tagsModel) View() string {
 		b.WriteString(fmt.Sprintf("错误: %v\n", m.err))
 	} else {
 		b.WriteString(docStyle.Render(m.list.View()))
-		b.WriteString("\n按 Enter 选择版本, Esc 返回\n")
+		b.WriteString("\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("#666")).Render("Press Enter to select, Esc to return"))
 	}
 
 	return b.String()

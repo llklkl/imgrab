@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/llklkl/imgrab/internal/registry"
 )
 
 type state int
@@ -17,12 +18,12 @@ const (
 )
 
 type Model struct {
-	state      state
-	search     searchModel
-	tags       tagsModel
-	confirm    confirmModel
-	progress   progressModel
-	selected   SelectedImage
+	state    state
+	search   searchModel
+	tags     tagsModel
+	confirm  confirmModel
+	progress progressModel
+	selected SelectedImage
 }
 
 type SelectedImage struct {
@@ -32,17 +33,40 @@ type SelectedImage struct {
 	Arch        string
 }
 
-func NewModel() Model {
+func NewModel(initialQuery string) Model {
 	return Model{
-		state:   stateSearch,
-		search:  newSearchModel(),
-		tags:    newTagsModel(),
-		confirm: newConfirmModel(),
+		state:    stateSearch,
+		search:   newSearchModel(initialQuery),
+		tags:     newTagsModel(),
+		confirm:  newConfirmModel(),
 		progress: progressModel{},
 	}
 }
 
 func (m Model) Init() tea.Cmd {
+	// 如果有初始搜索参数，立即执行搜索
+	if m.search.searchInput.Value() != "" {
+		return func() tea.Msg {
+			resp, err := registry.SearchImages(m.search.searchInput.Value(), 1, 20)
+			if err != nil {
+				return searchResultMsg{err: err}
+			}
+
+			items := make([]searchItem, 0, len(resp.Results))
+			for _, r := range resp.Results {
+				items = append(items, searchItem{
+					name:        r.Name,
+					description: r.Description,
+					stars:       r.Stars,
+					pullCount:   r.PullCount,
+					isOfficial:  r.IsOfficial,
+					owner:       r.RepoOwner,
+				})
+			}
+
+			return searchResultMsg{results: items}
+		}
+	}
 	return m.search.Init()
 }
 

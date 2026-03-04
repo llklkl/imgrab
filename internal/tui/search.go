@@ -49,12 +49,18 @@ type searchModel struct {
 	err          error
 }
 
-func newSearchModel() searchModel {
+func newSearchModel(initialQuery string) searchModel {
 	ti := textinput.New()
 	ti.Placeholder = "搜索镜像 (例如: nginx)..."
-	ti.Focus()
 	ti.CharLimit = 100
 	ti.Width = 50
+
+	if initialQuery != "" {
+		ti.SetValue(initialQuery)
+		ti.Blur()
+	} else {
+		ti.Focus()
+	}
 
 	l := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
 	l.Title = "Docker 镜像"
@@ -104,7 +110,9 @@ func (m searchModel) Update(msg tea.Msg) (searchModel, tea.Cmd) {
 				m.searchInput.Focus()
 				m.list.ResetSelected()
 			}
-		case "q", "ctrl+c":
+		case "ctrl+c":
+			return m, tea.Quit
+		case "q":
 			if !m.searchInput.Focused() {
 				return m, tea.Quit
 			}
@@ -123,6 +131,7 @@ func (m searchModel) Update(msg tea.Msg) (searchModel, tea.Cmd) {
 			items[i] = r
 		}
 		m.list.SetItems(items)
+		m.searchInput.Blur()
 		return m, nil
 
 	case tea.WindowSizeMsg:
@@ -152,9 +161,9 @@ func (m searchModel) View() string {
 		b.WriteString(fmt.Sprintf("错误: %v\n", m.err))
 	} else if !m.searchInput.Focused() {
 		b.WriteString(docStyle.Render(m.list.View()))
-		b.WriteString("\n按 Enter 选择镜像, Esc 返回搜索\n")
+		b.WriteString("\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("#666")).Render("Press Enter to select, Esc to return"))
 	} else {
-		b.WriteString("按 Enter 开始搜索\n")
+		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#666")).Render("Press Enter to search, Ctrl+C to quit"))
 	}
 
 	return b.String()

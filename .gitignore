@@ -2,3 +2,4 @@ bin/
 imgrab
 .trae/
 tmp/
+*.tar
