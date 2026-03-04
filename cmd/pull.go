@@ -1,12 +1,52 @@
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"fmt"
+
+	"github.com/llklkl/imgrab/internal/registry"
+	"github.com/spf13/cobra"
+)
 
 var pullCmd = &cobra.Command{
 	Use:   "pull [image]",
 	Short: "Pull a Docker image",
 	Long:  `Pull a Docker image from a registry and save it as a tar file.`,
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		imageRef := args[0]
+		outputDir, _ := cmd.Flags().GetString("output")
+		arch, _ := cmd.Flags().GetString("arch")
+		shouldImport, _ := cmd.Flags().GetBool("import")
+
+		fmt.Printf("Pulling image: %s\n", imageRef)
+
+		ref, err := registry.ParseImageRef(imageRef, arch, "")
+		if err != nil {
+			return fmt.Errorf("parse image reference: %w", err)
+		}
+
+		client := registry.NewClient()
+		img, err := client.PullImage(ref)
+		if err != nil {
+			return fmt.Errorf("pull image: %w", err)
+		}
+
+		opts := &registry.PullOptions{
+			OutputDir:    outputDir,
+			ShowProgress: true,
+		}
+
+		outputPath, err := registry.SaveImageToTar(img, ref, opts)
+		if err != nil {
+			return fmt.Errorf("save image: %w", err)
+		}
+
+		fmt.Printf("\nImage saved to: %s\n", outputPath)
+
+		if shouldImport {
+			fmt.Println("Importing to Docker...")
+		}
+
 		return nil
 	},
 }
