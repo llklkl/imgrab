@@ -107,3 +107,21 @@ func getImageSize(img v1.Image) (int64, error) {
 func parseTag(ref string) (name.Tag, error) {
 	return name.NewTag(ref)
 }
+
+func (c *Client) PullAndSave(refStr, outputDir string) error {
+	ref, err := ParseImageRef(refStr, "", "")
+	if err != nil {
+		return err
+	}
+
+	img, err := c.PullImage(ref)
+	if err != nil {
+		return err
+	}
+
+	_, err = SaveImageToTar(img, ref, &PullOptions{
+		OutputDir:    outputDir,
+		ShowProgress: true,
+	})
+	return err
+}

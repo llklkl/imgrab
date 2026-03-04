@@ -3,16 +3,26 @@ package cmd
 import (
 	"fmt"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/llklkl/imgrab/internal/registry"
+	"github.com/llklkl/imgrab/internal/tui"
 	"github.com/spf13/cobra"
 )
 
 var searchCmd = &cobra.Command{
 	Use:   "search [query]",
 	Short: "Search for Docker images",
-	Long:  `Search for Docker images on Docker Hub.`,
-	Args:  cobra.ExactArgs(1),
+	Long:  `Search for Docker images on Docker Hub. If no query is provided, starts the TUI.`,
+	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			p := tea.NewProgram(tui.NewModel())
+			if _, err := p.Run(); err != nil {
+				return fmt.Errorf("TUI error: %w", err)
+			}
+			return nil
+		}
+
 		query := args[0]
 		fmt.Printf("Searching for: %s\n\n", query)
 
@@ -32,15 +42,14 @@ var searchCmd = &cobra.Command{
 			if item.Description != "" {
 				fmt.Printf("   %s\n", item.Description)
 			}
-			fmt.Printf("   Stars: %d", item.Stars)
+			badge := ""
 			if item.IsOfficial {
-				fmt.Printf(" [OFFICIAL]")
+				badge += " [OFFICIAL]"
 			}
 			if item.IsAutomated {
-				fmt.Printf(" [AUTOMATED]")
+				badge += " [AUTOMATED]"
 			}
-			fmt.Println()
-			fmt.Println()
+			fmt.Printf("   Stars: %d%s\n\n", item.Stars, badge)
 		}
 
 		return nil
