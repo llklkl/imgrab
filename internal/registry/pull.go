@@ -53,6 +53,7 @@ func SaveImageToTar(img v1.Image, ref *ImageReference, opts *PullOptions) (strin
 	defer file.Close()
 
 	var writer io.Writer = file
+	var bar *progressbar.ProgressBar
 
 	if opts.ShowProgress {
 		size, err := getImageSize(img)
@@ -60,7 +61,7 @@ func SaveImageToTar(img v1.Image, ref *ImageReference, opts *PullOptions) (strin
 			return "", fmt.Errorf("get image size: %w", err)
 		}
 
-		bar := progressbar.DefaultBytes(size, "Writing")
+		bar = progressbar.DefaultBytes(size, "Writing")
 		writer = io.MultiWriter(file, &safeProgressWriter{bar: bar})
 	}
 
@@ -71,6 +72,10 @@ func SaveImageToTar(img v1.Image, ref *ImageReference, opts *PullOptions) (strin
 
 	if err := tarball.Write(tag, img, writer); err != nil {
 		return "", fmt.Errorf("write tarball: %w", err)
+	}
+
+	if bar != nil {
+		_ = bar.Finish()
 	}
 
 	return outputPath, nil
