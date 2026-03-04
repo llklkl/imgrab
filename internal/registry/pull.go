@@ -18,6 +18,16 @@ type PullOptions struct {
 	ShowProgress bool
 }
 
+type safeProgressWriter struct {
+	bar *progressbar.ProgressBar
+}
+
+func (w *safeProgressWriter) Write(p []byte) (int, error) {
+	n := len(p)
+	_ = w.bar.Add(n)
+	return n, nil
+}
+
 func SaveImageToTar(img v1.Image, ref *ImageReference, opts *PullOptions) (string, error) {
 	if opts == nil {
 		opts = &PullOptions{}
@@ -50,11 +60,8 @@ func SaveImageToTar(img v1.Image, ref *ImageReference, opts *PullOptions) (strin
 			return "", fmt.Errorf("get image size: %w", err)
 		}
 
-		bar := progressbar.DefaultBytes(
-			size,
-			"Downloading",
-		)
-		writer = io.MultiWriter(file, bar)
+		bar := progressbar.DefaultBytes(size, "Writing")
+		writer = io.MultiWriter(file, &safeProgressWriter{bar: bar})
 	}
 
 	tag, err := parseTag(ref.String())

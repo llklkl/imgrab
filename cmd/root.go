@@ -8,9 +8,11 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "imgrab",
-	Short: "imgrab - Docker image pull CLI tool",
-	Long:  `imgrab is a CLI tool for pulling Docker images from Docker Hub and private registries.`,
+	Use:           "imgrab",
+	Short:         "imgrab - Docker image pull CLI tool",
+	Long:          `imgrab is a CLI tool for pulling Docker images from Docker Hub and private registries.`,
+	SilenceErrors: true,
+	SilenceUsage:  true,
 }
 
 func Execute() {

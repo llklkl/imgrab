@@ -78,9 +78,9 @@ func ParseImageRef(refStr, arch, os string) (*ImageReference, error) {
 
 func (ir *ImageReference) String() string {
 	if ir.Tag == "" {
-		return fmt.Sprintf("%s/%s", ir.Registry, ir.Repository)
+		return ir.Repository
 	}
-	return fmt.Sprintf("%s/%s:%s", ir.Registry, ir.Repository, ir.Tag)
+	return fmt.Sprintf("%s:%s", ir.Repository, ir.Tag)
 }
 
 func (c *Client) PullImage(ref *ImageReference) (v1.Image, error) {

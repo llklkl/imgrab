@@ -9,10 +9,11 @@ import (
 )
 
 var pullCmd = &cobra.Command{
-	Use:   "pull [image]",
-	Short: "Pull a Docker image",
-	Long:  `Pull a Docker image from a registry and save it as a tar file.`,
-	Args:  cobra.ExactArgs(1),
+	Use:          "pull [image]",
+	Short:        "Pull a Docker image",
+	Long:         `Pull a Docker image from a registry and save it as a tar file.`,
+	Args:         cobra.ExactArgs(1),
+	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		imageRef := args[0]
 		outputDir, _ := cmd.Flags().GetString("output")
