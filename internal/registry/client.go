@@ -42,35 +42,21 @@ func ParseImageRef(refStr, arch, os string) (*ImageReference, error) {
 	}
 
 	var tag string
-	switch r := ref.(type) {
-	case name.Tag:
-		tag = r.TagStr()
-	case name.Digest:
-		tag = r.DigestStr()
-	default:
+	if t, ok := ref.(name.Tag); ok {
+		tag = t.TagStr()
+	} else if d, ok := ref.(name.Digest); ok {
+		tag = d.DigestStr()
+	} else {
 		tag = "latest"
 	}
 
-	fullRef := ref.Name()
-	parts := strings.SplitN(fullRef, "/", 3)
-
-	var registry, repository, name string
-	if len(parts) >= 3 && (strings.Contains(parts[0], ".") || strings.Contains(parts[0], ":")) {
-		registry = parts[0]
-		repository = parts[1] + "/" + parts[2]
-		name = parts[2]
-	} else if len(parts) == 2 {
-		registry = "index.docker.io"
-		repository = parts[0] + "/" + parts[1]
-		name = parts[1]
-	} else {
-		registry = "index.docker.io"
-		repository = "library/" + parts[0]
-		name = parts[0]
-	}
-
-	if idx := strings.Index(name, ":"); idx != -1 {
-		name = name[:idx]
+	repo := ref.Context()
+	registry := repo.Registry.Name()
+	repository := repo.Name()
+	
+	nameStr := repository
+	if idx := strings.LastIndex(nameStr, "/"); idx != -1 {
+		nameStr = nameStr[idx+1:]
 	}
 
 	if arch == "" {
@@ -83,7 +69,7 @@ func ParseImageRef(refStr, arch, os string) (*ImageReference, error) {
 	return &ImageReference{
 		Registry:   registry,
 		Repository: repository,
-		Name:       name,
+		Name:       nameStr,
 		Tag:        tag,
 		Arch:       arch,
 		OS:         os,
