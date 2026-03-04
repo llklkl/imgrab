@@ -25,7 +25,12 @@ var pullCmd = &cobra.Command{
 			return fmt.Errorf("parse image reference: %w", err)
 		}
 
-		client := registry.NewClient()
+		auth, err := registry.GetCredential(ref.Registry)
+		if err != nil {
+			return fmt.Errorf("get credential: %w", err)
+		}
+
+		client := registry.NewClient().WithAuth(auth)
 		img, err := client.PullImage(ref)
 		if err != nil {
 			return fmt.Errorf("pull image: %w", err)
