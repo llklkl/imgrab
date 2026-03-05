@@ -105,8 +105,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if m.tags.back {
 			m.state = stateSearch
-			m.search.selected = ""
+			m.search = m.search.resetToInput()
 			m.tags.back = false
+			m.tags.selected = ""
+			m.tags.repository = ""
+			m.tags.list.ResetSelected()
 			return m, nil
 		}
 		return m, cmd

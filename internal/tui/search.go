@@ -51,7 +51,7 @@ type searchModel struct {
 
 func newSearchModel(initialQuery string) searchModel {
 	ti := textinput.New()
-	ti.Placeholder = "搜索镜像 (例如: nginx)..."
+	ti.Placeholder = "Search image (e.g. nginx)..."
 	ti.CharLimit = 100
 	ti.Width = 50
 
@@ -63,7 +63,7 @@ func newSearchModel(initialQuery string) searchModel {
 	}
 
 	l := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
-	l.Title = "Docker 镜像"
+	l.Title = "Docker Images"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 
@@ -151,14 +151,14 @@ func (m searchModel) Update(msg tea.Msg) (searchModel, tea.Cmd) {
 func (m searchModel) View() string {
 	var b strings.Builder
 
-	b.WriteString("imgrab - Docker 镜像拉取工具\n\n")
+	b.WriteString("imgrab - Docker Image Pull Tool\n\n")
 	b.WriteString(m.searchInput.View())
 	b.WriteString("\n\n")
 
 	if m.searching {
-		b.WriteString("搜索中...\n")
+		b.WriteString("Searching...\n")
 	} else if m.err != nil {
-		b.WriteString(fmt.Sprintf("错误: %v\n", m.err))
+		b.WriteString(fmt.Sprintf("Error: %v\n", m.err))
 	} else if !m.searchInput.Focused() {
 		b.WriteString(docStyle.Render(m.list.View()))
 		b.WriteString("\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("#666")).Render("Press Enter to select, Esc to return"))
@@ -190,4 +190,12 @@ func (m searchModel) searchImages(query string) tea.Cmd {
 
 		return searchResultMsg{results: items}
 	}
+}
+
+func (m searchModel) resetToInput() searchModel {
+	m.searchInput.Focus()
+	m.list.ResetSelected()
+	m.selected = ""
+	m.selectedDesc = ""
+	return m
 }
