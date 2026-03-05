@@ -80,11 +80,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case stateSearch:
 		var cmd tea.Cmd
 		m.search, cmd = m.search.Update(msg)
+
+		// Check if we should transition to tags state
 		if m.search.selected != "" {
-			m.selected.Name = m.search.selected
-			m.selected.Description = m.search.selectedDesc
+			selectedRepo := m.search.selected
+			// Immediately clear selected to prevent immediate re-transition
+			m.search.selected = ""
+			m.search.selectedDesc = ""
+
+			m.selected.Name = selectedRepo
 			m.state = stateTags
-			m.tags.repository = m.search.selected
+			m.tags.repository = selectedRepo
 
 			if m.windowSize.Width > 0 && m.windowSize.Height > 0 {
 				h, v := 2, 4
@@ -96,23 +102,31 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 	case stateTags:
 		var cmd tea.Cmd
+
+		// Check if we should transition back before updating tags model
+		if m.tags.back {
+			m.state = stateSearch
+			m.search = m.search.resetToInput()
+			// Clear all tags model state
+			m.tags.back = false
+			m.tags.selected = ""
+			m.tags.repository = ""
+			m.tags.list.ResetSelected()
+			m.tags.list.SetItems(nil) // Clear any loaded tags from list
+			m.tags.err = nil
+			m.tags.loading = false
+			return m, nil
+		}
+
 		m.tags, cmd = m.tags.Update(msg)
+
 		if m.tags.selected != "" {
 			m.selected.Tag = m.tags.selected
 			m.state = stateConfirm
 			m.confirm.image = m.selected
 			return m, nil
 		}
-		if m.tags.back {
-			m.state = stateSearch
-			// Directly reset to input mode instead of staying on results page
-			m.search = m.search.resetToInput()
-			m.tags.back = false
-			m.tags.selected = ""
-			m.tags.repository = ""
-			m.tags.list.ResetSelected()
-			return m, nil
-		}
+
 		return m, cmd
 	case stateConfirm:
 		var cmd tea.Cmd

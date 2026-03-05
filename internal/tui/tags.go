@@ -64,6 +64,11 @@ func (m tagsModel) Init() tea.Cmd {
 func (m tagsModel) Update(msg tea.Msg) (tagsModel, tea.Cmd) {
 	var cmd tea.Cmd
 
+	// If there's no message, don't change anything
+	if msg == nil {
+		return m, nil
+	}
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -71,13 +76,20 @@ func (m tagsModel) Update(msg tea.Msg) (tagsModel, tea.Cmd) {
 			if m.loading {
 				return m, nil
 			}
-			if i, ok := m.list.SelectedItem().(tagItem); ok {
-				m.selected = i.name
+			if len(m.list.Items()) > 0 {
+				if i, ok := m.list.SelectedItem().(tagItem); ok {
+					m.selected = i.name
+				}
 			}
 		case "esc":
 			m.back = true
 		case "q", "ctrl+c":
 			return m, tea.Quit
+		// Prevent directional keys from causing navigation when loading
+		case "up", "k", "down", "j":
+			if m.loading {
+				return m, nil
+			}
 		}
 
 	case tagsResultMsg:
@@ -99,7 +111,9 @@ func (m tagsModel) Update(msg tea.Msg) (tagsModel, tea.Cmd) {
 		m.list.SetSize(msg.Width-h, msg.Height-v-5)
 	}
 
-	m.list, cmd = m.list.Update(msg)
+	if !m.loading {
+		m.list, cmd = m.list.Update(msg)
+	}
 
 	return m, cmd
 }
