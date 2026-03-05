@@ -82,7 +82,7 @@ func (m tagsModel) Update(msg tea.Msg) (tagsModel, tea.Cmd) {
 		return m, nil
 
 	case tea.WindowSizeMsg:
-		h, v := docStyle.GetFrameSize()
+		h, v := 2, 4
 		m.list.SetSize(msg.Width-h, msg.Height-v-5)
 	}
 
@@ -101,7 +101,7 @@ func (m tagsModel) View() string {
 	} else if m.err != nil {
 		b.WriteString(fmt.Sprintf("错误: %v\n", m.err))
 	} else {
-		b.WriteString(docStyle.Render(m.list.View()))
+		b.WriteString(lipgloss.NewStyle().Margin(1, 2).Render(m.list.View()))
 		b.WriteString("\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("#666")).Render("Press Enter to select, Esc to return"))
 	}
 
