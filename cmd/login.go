@@ -12,8 +12,24 @@ import (
 var loginCmd = &cobra.Command{
 	Use:   "login [registry]",
 	Short: "Login to a Docker registry",
-	Long:  `Login to a Docker registry and save credentials.`,
-	Args:  cobra.MaximumNArgs(1),
+	Long: `Login to a Docker registry and save credentials to ~/.docker/config.json.
+
+If no registry is provided, defaults to Docker Hub (index.docker.io).
+If username or password are not provided via flags, they will be prompted interactively.
+
+Examples:
+  # Login to Docker Hub
+  imgrab login
+
+  # Login to Docker Hub with credentials
+  imgrab login -u your_username -p your_password
+
+  # Login to private registry
+  imgrab login registry.example.com
+
+  # Login to private registry with credentials
+  imgrab login registry.example.com -u your_username -p your_password`,
+	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		registryAddr := "index.docker.io"
 		if len(args) > 0 {

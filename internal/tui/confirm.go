@@ -81,11 +81,11 @@ func (m confirmModel) Update(msg tea.Msg) (confirmModel, tea.Cmd) {
 func (m confirmModel) View() string {
 	var b strings.Builder
 
-	b.WriteString(titleStyle.Render("确认下载") + "\n\n")
-	b.WriteString(fmt.Sprintf("镜像: %s\n", highlightStyle.Render(m.image.Name)))
-	b.WriteString(fmt.Sprintf("版本: %s\n\n", highlightStyle.Render(m.image.Tag)))
+	b.WriteString(titleStyle.Render("Confirm Download") + "\n\n")
+	b.WriteString(fmt.Sprintf("Image: %s\n", highlightStyle.Render(m.image.Name)))
+	b.WriteString(fmt.Sprintf("Tag: %s\n\n", highlightStyle.Render(m.image.Tag)))
 
-	b.WriteString("架构选择 (←/→ 切换):\n\n")
+	b.WriteString("Select Architecture (←/→ to switch):\n\n")
 	for i, arch := range archList {
 		if i == m.archIndex {
 			b.WriteString(archSelectedStyle.Render(arch))
@@ -95,7 +95,7 @@ func (m confirmModel) View() string {
 	}
 
 	b.WriteString("\n\n")
-	b.WriteString("按 y/Enter 确认下载, n/Esc 返回\n")
+	b.WriteString("Press y/Enter to confirm, n/Esc to return\n")
 
 	return confirmStyle.Render(b.String())
 }

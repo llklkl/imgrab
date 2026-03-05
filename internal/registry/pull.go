@@ -13,18 +13,46 @@ import (
 	"github.com/schollz/progressbar/v3"
 )
 
+type ProgressUpdate struct {
+	Progress int64
+	Total    int64
+}
+
 type PullOptions struct {
 	OutputDir    string
 	ShowProgress bool
+	ProgressChan chan<- ProgressUpdate
 }
 
 type safeProgressWriter struct {
-	bar *progressbar.ProgressBar
+	bar          *progressbar.ProgressBar
+	progressChan chan<- ProgressUpdate
+	total        int64
+	current      int64
 }
 
 func (w *safeProgressWriter) Write(p []byte) (int, error) {
 	n := len(p)
-	_ = w.bar.Add(n)
+	w.current += int64(n)
+
+	if w.bar != nil {
+		if w.current <= w.total {
+			_ = w.bar.Add(n)
+		} else {
+			remaining := w.total - (w.current - int64(n))
+			if remaining > 0 {
+				_ = w.bar.Add(int(remaining))
+			}
+		}
+	}
+
+	if w.progressChan != nil {
+		select {
+		case w.progressChan <- ProgressUpdate{Progress: w.current, Total: w.total}:
+		default:
+		}
+	}
+
 	return n, nil
 }
 
@@ -54,15 +82,28 @@ func SaveImageToTar(img v1.Image, ref *ImageReference, opts *PullOptions) (strin
 
 	var writer io.Writer = file
 	var bar *progressbar.ProgressBar
+	var totalSize int64
 
-	if opts.ShowProgress {
-		size, err := getImageSize(img)
+	if opts.ShowProgress || opts.ProgressChan != nil {
+		size, err := img.Size()
 		if err != nil {
-			return "", fmt.Errorf("get image size: %w", err)
+			size, err = getImageSize(img)
+			if err != nil {
+				return "", fmt.Errorf("get image size: %w", err)
+			}
+		}
+		totalSize = size
+
+		if opts.ShowProgress {
+			bar = progressbar.DefaultBytes(size, "Writing")
 		}
 
-		bar = progressbar.DefaultBytes(size, "Writing")
-		writer = io.MultiWriter(file, &safeProgressWriter{bar: bar})
+		writer = io.MultiWriter(file, &safeProgressWriter{
+			bar:          bar,
+			progressChan: opts.ProgressChan,
+			total:        totalSize,
+			current:      0,
+		})
 	}
 
 	tag, err := parseTag(ref.String())
@@ -120,8 +161,8 @@ func parseTag(ref string) (name.Tag, error) {
 	return name.NewTag(ref)
 }
 
-func (c *Client) PullAndSave(refStr, outputDir string) error {
-	ref, err := ParseImageRef(refStr, "", "")
+func (c *Client) PullAndSave(refStr, arch, outputDir string, progressChan chan<- ProgressUpdate) error {
+	ref, err := ParseImageRef(refStr, arch, "")
 	if err != nil {
 		return err
 	}
@@ -133,7 +174,8 @@ func (c *Client) PullAndSave(refStr, outputDir string) error {
 
 	_, err = SaveImageToTar(img, ref, &PullOptions{
 		OutputDir:    outputDir,
-		ShowProgress: true,
+		ShowProgress: false,
+		ProgressChan: progressChan,
 	})
 	return err
 }

@@ -145,7 +145,7 @@ func (m Model) View() string {
 	case stateProgress:
 		return m.progress.View()
 	case stateDone:
-		return fmt.Sprintf("下载完成！\n\n按 q 或 Ctrl+C 退出\n")
+		return fmt.Sprintf("Download complete!\n\nPress q or Ctrl+C to exit\n")
 	}
 	return ""
 }

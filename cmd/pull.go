@@ -9,9 +9,25 @@ import (
 )
 
 var pullCmd = &cobra.Command{
-	Use:          "pull [image]",
-	Short:        "Pull a Docker image",
-	Long:         `Pull a Docker image from a registry and save it as a tar file.`,
+	Use:   "pull [image]",
+	Short: "Pull a Docker image",
+	Long: `Pull a Docker image from a registry and save it as a tar file.
+
+Examples:
+  # Pull nginx latest
+  imgrab pull nginx
+
+  # Pull specific version
+  imgrab pull nginx:1.25.3
+
+  # Pull and save to specific directory
+  imgrab pull nginx -o ./images
+
+  # Specify architecture
+  imgrab pull nginx -a arm64
+
+  # Import to Docker after pulling
+  imgrab pull nginx -i`,
 	Args:         cobra.ExactArgs(1),
 	SilenceUsage: true,
 	RunE: func(cmd *cobra.Command, args []string) error {

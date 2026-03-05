@@ -6,7 +6,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/schollz/progressbar/v3"
 
 	"github.com/llklkl/imgrab/internal/registry"
 )
@@ -20,13 +19,12 @@ var (
 )
 
 type progressModel struct {
-	image    SelectedImage
+	image       SelectedImage
 	downloading bool
-	done     bool
-	err      error
-	bar      *progressbar.ProgressBar
-	progress int64
-	total    int64
+	done        bool
+	err         error
+	progress    int64
+	total       int64
 }
 
 type progressMsg struct {
@@ -41,7 +39,16 @@ type downloadDoneMsg struct {
 func (m progressModel) startDownload() tea.Cmd {
 	return func() tea.Msg {
 		imageRef := fmt.Sprintf("%s:%s", m.image.Name, m.image.Tag)
-		err := registry.NewClient().PullAndSave(imageRef, ".")
+		arch := m.image.Arch
+		if arch == "" {
+			arch = ""
+		} else {
+			parts := strings.Split(arch, "/")
+			if len(parts) >= 2 {
+				arch = parts[1]
+			}
+		}
+		err := registry.NewClient().PullAndSave(imageRef, arch, ".", nil)
 		if err != nil {
 			return downloadDoneMsg{err: err}
 		}
@@ -62,6 +69,9 @@ func (m progressModel) Update(msg tea.Msg) (progressModel, tea.Cmd) {
 				return m, tea.Quit
 			}
 		}
+	case progressMsg:
+		m.progress = msg.progress
+		m.total = msg.total
 	case downloadDoneMsg:
 		m.downloading = false
 		m.done = true
@@ -73,21 +83,48 @@ func (m progressModel) Update(msg tea.Msg) (progressModel, tea.Cmd) {
 func (m progressModel) View() string {
 	var b strings.Builder
 
-	b.WriteString(titleStyle.Render("下载中") + "\n\n")
-	b.WriteString(fmt.Sprintf("镜像: %s\n", highlightStyle.Render(m.image.Name)))
-	b.WriteString(fmt.Sprintf("版本: %s\n", highlightStyle.Render(m.image.Tag)))
-	b.WriteString(fmt.Sprintf("架构: %s\n\n", highlightStyle.Render(m.image.Arch)))
+	b.WriteString(titleStyle.Render("Downloading") + "\n\n")
+	b.WriteString(fmt.Sprintf("Image: %s\n", highlightStyle.Render(m.image.Name)))
+	b.WriteString(fmt.Sprintf("Tag: %s\n", highlightStyle.Render(m.image.Tag)))
+	b.WriteString(fmt.Sprintf("Architecture: %s\n\n", highlightStyle.Render(m.image.Arch)))
 
 	if m.done {
 		if m.err != nil {
-			b.WriteString(fmt.Sprintf("下载失败: %v\n", m.err))
+			b.WriteString(fmt.Sprintf("Download failed: %v\n", m.err))
 		} else {
-			b.WriteString("下载完成！\n")
+			b.WriteString("Download complete!\n")
 		}
-		b.WriteString("\n按 q 或 Ctrl+C 退出\n")
+		b.WriteString("\nPress q or Ctrl+C to exit\n")
 	} else {
-		b.WriteString("正在下载镜像...\n")
+		if m.total > 0 {
+			percent := float64(m.progress) / float64(m.total) * 100
+			b.WriteString(fmt.Sprintf("Progress: %.1f%% (%s / %s)\n", 
+				percent, formatBytes(m.progress), formatBytes(m.total)))
+			
+			barWidth := 50
+			filled := int(float64(barWidth) * float64(m.progress) / float64(m.total))
+			if filled > barWidth {
+				filled = barWidth
+			}
+			bar := strings.Repeat("█", filled) + strings.Repeat("░", barWidth-filled)
+			b.WriteString(fmt.Sprintf("[%s]\n", bar))
+		} else {
+			b.WriteString("Downloading image...\n")
+		}
 	}
 
 	return progressStyle.Render(b.String())
+}
+
+func formatBytes(b int64) string {
+	const unit = 1024
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := int64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(b)/float64(div), "KMGTPE"[exp])
 }

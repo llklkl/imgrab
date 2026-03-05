@@ -53,7 +53,7 @@ func ParseImageRef(refStr, arch, os string) (*ImageReference, error) {
 	repo := ref.Context()
 	registry := repo.Registry.Name()
 	repository := repo.Name()
-	
+
 	nameStr := repository
 	if idx := strings.LastIndex(nameStr, "/"); idx != -1 {
 		nameStr = nameStr[idx+1:]
@@ -89,10 +89,40 @@ func (c *Client) PullImage(ref *ImageReference) (v1.Image, error) {
 		return nil, fmt.Errorf("parse reference: %w", err)
 	}
 
-	img, err := remote.Image(imgRef, remote.WithAuth(c.auth))
+	desc, err := remote.Get(imgRef, remote.WithAuth(c.auth))
 	if err != nil {
-		return nil, fmt.Errorf("pull image: %w", err)
+		return nil, fmt.Errorf("get descriptor: %w", err)
 	}
 
+	if desc.MediaType.IsIndex() {
+		idx, err := desc.ImageIndex()
+		if err != nil {
+			return nil, fmt.Errorf("get image index: %w", err)
+		}
+		idxManifest, err := idx.IndexManifest()
+		if err != nil {
+			return nil, fmt.Errorf("get index manifest: %w", err)
+		}
+
+		targetPlatform := fmt.Sprintf("%s/%s", ref.OS, ref.Arch)
+		for _, manifest := range idxManifest.Manifests {
+			if manifest.Platform != nil {
+				platform := fmt.Sprintf("%s/%s", manifest.Platform.OS, manifest.Platform.Architecture)
+				if platform == targetPlatform {
+					img, err := idx.Image(manifest.Digest)
+					if err != nil {
+						return nil, fmt.Errorf("get image for platform %s: %w", targetPlatform, err)
+					}
+					return img, nil
+				}
+			}
+		}
+		return nil, fmt.Errorf("no image found for platform %s", targetPlatform)
+	}
+
+	img, err := desc.Image()
+	if err != nil {
+		return nil, fmt.Errorf("get image: %w", err)
+	}
 	return img, nil
 }

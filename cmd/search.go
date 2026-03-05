@@ -11,8 +11,24 @@ import (
 var searchCmd = &cobra.Command{
 	Use:   "search [query]",
 	Short: "Search for Docker images",
-	Long:  `Search for Docker images on Docker Hub. If no query is provided, starts the TUI. If a query is provided, starts the TUI and searches for that query.`,
-	Args:  cobra.MaximumNArgs(1),
+	Long: `Search for Docker images on Docker Hub using an interactive TUI.
+
+If no query is provided, starts the TUI search interface.
+If a query is provided, starts the TUI and immediately searches for that query.
+
+TUI Controls:
+  - Enter: Start search / Select item
+  - ↑/↓: Navigate list
+  - Esc: Go back
+  - q / Ctrl+C: Quit
+
+Examples:
+  # Open search interface
+  imgrab search
+
+  # Search for nginx
+  imgrab search nginx`,
+	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		var initialQuery string
 		if len(args) > 0 {
