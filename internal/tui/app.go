@@ -18,12 +18,13 @@ const (
 )
 
 type Model struct {
-	state    state
-	search   searchModel
-	tags     tagsModel
-	confirm  confirmModel
-	progress progressModel
-	selected SelectedImage
+	state      state
+	search     searchModel
+	tags       tagsModel
+	confirm    confirmModel
+	progress   progressModel
+	selected   SelectedImage
+	windowSize tea.WindowSizeMsg
 }
 
 type SelectedImage struct {
@@ -71,6 +72,10 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	if ws, ok := msg.(tea.WindowSizeMsg); ok {
+		m.windowSize = ws
+	}
+
 	switch m.state {
 	case stateSearch:
 		var cmd tea.Cmd
@@ -80,6 +85,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.selected.Description = m.search.selectedDesc
 			m.state = stateTags
 			m.tags.repository = m.search.selected
+
+			if m.windowSize.Width > 0 && m.windowSize.Height > 0 {
+				h, v := 2, 4
+				m.tags.list.SetSize(m.windowSize.Width-h, m.windowSize.Height-v-5)
+			}
+
 			return m, m.tags.Init()
 		}
 		return m, cmd

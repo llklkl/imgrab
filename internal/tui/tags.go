@@ -30,7 +30,7 @@ type tagsModel struct {
 
 func newTagsModel() tagsModel {
 	l := list.New([]list.Item{}, list.NewDefaultDelegate(), 0, 0)
-	l.Title = "镜像版本"
+	l.Title = "Image Tags"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
 
@@ -94,12 +94,12 @@ func (m tagsModel) Update(msg tea.Msg) (tagsModel, tea.Cmd) {
 func (m tagsModel) View() string {
 	var b strings.Builder
 
-	b.WriteString(fmt.Sprintf("镜像: %s\n\n", m.repository))
+	b.WriteString(fmt.Sprintf("Image: %s\n\n", m.repository))
 
 	if m.loading {
-		b.WriteString("加载版本列表中...\n")
+		b.WriteString("Loading tags...\n")
 	} else if m.err != nil {
-		b.WriteString(fmt.Sprintf("错误: %v\n", m.err))
+		b.WriteString(fmt.Sprintf("Error: %v\n", m.err))
 	} else {
 		b.WriteString(lipgloss.NewStyle().Margin(1, 2).Render(m.list.View()))
 		b.WriteString("\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("#666")).Render("Press Enter to select, Esc to return"))
