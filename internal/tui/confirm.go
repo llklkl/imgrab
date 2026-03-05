@@ -67,6 +67,10 @@ func (m confirmModel) Update(msg tea.Msg) (confirmModel, tea.Cmd) {
 			if m.archIndex < len(archList)-1 {
 				m.archIndex++
 			}
+		case "down", "j":
+			// Focus on architecture options if needed
+		case "up", "k":
+			// Focus on confirm button if needed
 		case "y", "Y", "enter":
 			m.confirmed = true
 		case "n", "N", "esc":

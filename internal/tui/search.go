@@ -110,6 +110,22 @@ func (m searchModel) Update(msg tea.Msg) (searchModel, tea.Cmd) {
 				m.searchInput.Focus()
 				m.list.ResetSelected()
 			}
+		// Add support for focusing list with tab or arrow keys from input
+		case "down", "j":
+			if m.searchInput.Focused() {
+				m.searchInput.Blur()
+			}
+		case "up", "k":
+			if m.searchInput.Focused() {
+				// Stay in input mode if up key pressed while focused
+			}
+		case "tab":
+			if m.searchInput.Focused() {
+				m.searchInput.Blur()
+			} else {
+				m.searchInput.Focus()
+				m.list.ResetSelected()
+			}
 		case "ctrl+c":
 			return m, tea.Quit
 		case "q":

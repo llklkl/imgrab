@@ -12,10 +12,10 @@ import (
 
 var (
 	progressStyle = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("63")).
-			Padding(1, 2).
-			Width(70)
+		Border(lipgloss.RoundedBorder()).
+		BorderForeground(lipgloss.Color("63")).
+		Padding(1, 2).
+		Width(70)
 )
 
 type progressModel struct {
@@ -64,10 +64,13 @@ func (m progressModel) Update(msg tea.Msg) (progressModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "q", "ctrl+c":
+		case "q", "ctrl+c", "esc":
+			// Always allow exiting from any state
 			if m.done {
 				return m, tea.Quit
 			}
+			// Handle download cancellation
+			return m, tea.Quit
 		}
 	case progressMsg:
 		m.progress = msg.progress
@@ -98,9 +101,9 @@ func (m progressModel) View() string {
 	} else {
 		if m.total > 0 {
 			percent := float64(m.progress) / float64(m.total) * 100
-			b.WriteString(fmt.Sprintf("Progress: %.1f%% (%s / %s)\n", 
+			b.WriteString(fmt.Sprintf("Progress: %.1f%% (%s / %s)\n",
 				percent, formatBytes(m.progress), formatBytes(m.total)))
-			
+
 			barWidth := 50
 			filled := int(float64(barWidth) * float64(m.progress) / float64(m.total))
 			if filled > barWidth {
@@ -111,6 +114,7 @@ func (m progressModel) View() string {
 		} else {
 			b.WriteString("Downloading image...\n")
 		}
+		b.WriteString("\nPress q or Ctrl+C to cancel\n")
 	}
 
 	return progressStyle.Render(b.String())

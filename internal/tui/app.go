@@ -105,6 +105,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 		if m.tags.back {
 			m.state = stateSearch
+			// Directly reset to input mode instead of staying on results page
 			m.search = m.search.resetToInput()
 			m.tags.back = false
 			m.tags.selected = ""

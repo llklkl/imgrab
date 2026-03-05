@@ -33,10 +33,23 @@ func newTagsModel() tagsModel {
 	l.Title = "Image Tags"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
+	l.SetShowHelp(false)
+	l.SetShowPagination(false)
 
 	return tagsModel{
 		list: l,
 	}
+}
+
+func (m tagsModel) reset() tagsModel {
+	m.selected = ""
+	m.back = false
+	m.repository = ""
+	m.err = nil
+	m.loading = false
+	m.list.ResetSelected()
+	m.list.SetItems(nil)
+	return m
 }
 
 type tagsResultMsg struct {
