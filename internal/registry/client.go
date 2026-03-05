@@ -59,11 +59,24 @@ func ParseImageRef(refStr, arch, os string) (*ImageReference, error) {
 		nameStr = nameStr[idx+1:]
 	}
 
-	if arch == "" {
-		arch = runtime.GOARCH
+	finalArch := arch
+	finalOS := os
+
+	if strings.Contains(finalArch, "/") {
+		parts := strings.SplitN(finalArch, "/", 2)
+		finalOS = parts[0]
+		finalArch = parts[1]
 	}
-	if os == "" {
-		os = runtime.GOOS
+
+	if finalArch == "" {
+		finalArch = runtime.GOARCH
+	}
+	if finalOS == "" {
+		finalOS = "linux"
+	}
+
+	if finalArch == "x86" {
+		finalArch = "amd64"
 	}
 
 	return &ImageReference{
@@ -71,8 +84,8 @@ func ParseImageRef(refStr, arch, os string) (*ImageReference, error) {
 		Repository: repository,
 		Name:       nameStr,
 		Tag:        tag,
-		Arch:       arch,
-		OS:         os,
+		Arch:       finalArch,
+		OS:         finalOS,
 	}, nil
 }
 
