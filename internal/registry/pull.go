@@ -85,17 +85,12 @@ func SaveImageToTar(img v1.Image, ref *ImageReference, opts *PullOptions) (strin
 	var totalSize int64
 
 	if opts.ShowProgress || opts.ProgressChan != nil {
-		size, err := img.Size()
-		if err != nil {
-			size, err = getImageSize(img)
-			if err != nil {
-				return "", fmt.Errorf("get image size: %w", err)
-			}
-		}
-		totalSize = size
+		imgSize, _ := img.Size()
+		layerSize, _ := getImageSize(img)
+		totalSize = imgSize + layerSize
 
 		if opts.ShowProgress {
-			bar = progressbar.DefaultBytes(size, "Writing")
+			bar = progressbar.DefaultBytes(totalSize, "Writing")
 		}
 
 		writer = io.MultiWriter(file, &safeProgressWriter{
