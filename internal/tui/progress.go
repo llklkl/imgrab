@@ -63,13 +63,10 @@ func (m progressModel) Init() tea.Cmd {
 func (m progressModel) Update(msg tea.Msg) (progressModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
+		key := msg.String()
+
+		switch key {
 		case "q", "ctrl+c", "esc":
-			// Always allow exiting from any state
-			if m.done {
-				return m, tea.Quit
-			}
-			// Handle download cancellation
 			return m, tea.Quit
 		}
 	case progressMsg:

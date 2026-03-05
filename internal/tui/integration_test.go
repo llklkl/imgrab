@@ -116,5 +116,5 @@ func TestTagsStateReset(t *testing.T) {
 	assert.Empty(t, m.tags.repository)
 	assert.Empty(t, m.tags.selected)
 	assert.False(t, m.tags.back)
-	assert.True(t, m.search.searchInput.Focused())
+	assert.False(t, m.search.searchInput.Focused())
 }

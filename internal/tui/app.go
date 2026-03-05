@@ -17,6 +17,23 @@ const (
 	stateDone
 )
 
+func (s state) String() string {
+	switch s {
+	case stateSearch:
+		return "Search"
+	case stateTags:
+		return "Tags"
+	case stateConfirm:
+		return "Confirm"
+	case stateProgress:
+		return "Progress"
+	case stateDone:
+		return "Done"
+	default:
+		return fmt.Sprintf("Unknown(%d)", s)
+	}
+}
+
 type Model struct {
 	state      state
 	search     searchModel
@@ -45,7 +62,6 @@ func NewModel(initialQuery string) Model {
 }
 
 func (m Model) Init() tea.Cmd {
-	// 如果有初始搜索参数，立即执行搜索
 	if m.search.searchInput.Value() != "" {
 		return func() tea.Msg {
 			resp, err := registry.SearchImages(m.search.searchInput.Value(), 1, 20)
@@ -81,10 +97,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.search, cmd = m.search.Update(msg)
 
-		// Check if we should transition to tags state
 		if m.search.selected != "" {
 			selectedRepo := m.search.selected
-			// Immediately clear selected to prevent immediate re-transition
 			m.search.selected = ""
 			m.search.selectedDesc = ""
 
@@ -103,22 +117,24 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case stateTags:
 		var cmd tea.Cmd
 
-		// Check if we should transition back before updating tags model
+		m.tags, cmd = m.tags.Update(msg)
+
 		if m.tags.back {
 			m.state = stateSearch
-			m.search = m.search.resetToInput()
-			// Clear all tags model state
 			m.tags.back = false
 			m.tags.selected = ""
 			m.tags.repository = ""
 			m.tags.list.ResetSelected()
-			m.tags.list.SetItems(nil) // Clear any loaded tags from list
+			m.tags.list.SetItems(nil)
 			m.tags.err = nil
 			m.tags.loading = false
+			m.search.searchInput.Blur()
+			m.search.list.ResetSelected()
+			m.search.selected = ""
+			m.search.selectedDesc = ""
+			m.search.searching = false
 			return m, nil
 		}
-
-		m.tags, cmd = m.tags.Update(msg)
 
 		if m.tags.selected != "" {
 			m.selected.Tag = m.tags.selected
@@ -141,6 +157,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.state = stateTags
 			m.confirm.back = false
 			m.confirm.confirmed = false
+			m.tags.selected = ""
+			m.tags.list.ResetSelected()
 			return m, nil
 		}
 		return m, cmd

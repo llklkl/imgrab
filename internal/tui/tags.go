@@ -62,16 +62,15 @@ func (m tagsModel) Init() tea.Cmd {
 }
 
 func (m tagsModel) Update(msg tea.Msg) (tagsModel, tea.Cmd) {
-	var cmd tea.Cmd
-
-	// If there's no message, don't change anything
 	if msg == nil {
 		return m, nil
 	}
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
+		key := msg.String()
+
+		switch key {
 		case "enter":
 			if m.loading {
 				return m, nil
@@ -83,9 +82,9 @@ func (m tagsModel) Update(msg tea.Msg) (tagsModel, tea.Cmd) {
 			}
 		case "esc":
 			m.back = true
+			return m, nil
 		case "q", "ctrl+c":
 			return m, tea.Quit
-		// Prevent directional keys from causing navigation when loading
 		case "up", "k", "down", "j":
 			if m.loading {
 				return m, nil
@@ -105,17 +104,12 @@ func (m tagsModel) Update(msg tea.Msg) (tagsModel, tea.Cmd) {
 		}
 		m.list.SetItems(items)
 		return m, nil
-
 	case tea.WindowSizeMsg:
 		h, v := 2, 4
 		m.list.SetSize(msg.Width-h, msg.Height-v-5)
 	}
 
-	if !m.loading {
-		m.list, cmd = m.list.Update(msg)
-	}
-
-	return m, cmd
+	return m, nil
 }
 
 func (m tagsModel) View() string {

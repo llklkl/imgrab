@@ -58,7 +58,9 @@ func (m confirmModel) Init() tea.Cmd {
 func (m confirmModel) Update(msg tea.Msg) (confirmModel, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
+		key := msg.String()
+
+		switch key {
 		case "left", "h":
 			if m.archIndex > 0 {
 				m.archIndex--
@@ -68,9 +70,7 @@ func (m confirmModel) Update(msg tea.Msg) (confirmModel, tea.Cmd) {
 				m.archIndex++
 			}
 		case "down", "j":
-			// Focus on architecture options if needed
 		case "up", "k":
-			// Focus on confirm button if needed
 		case "y", "Y", "enter":
 			m.confirmed = true
 		case "n", "N", "esc":

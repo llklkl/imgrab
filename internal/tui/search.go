@@ -87,7 +87,9 @@ func (m searchModel) Update(msg tea.Msg) (searchModel, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
+		key := msg.String()
+
+		switch key {
 		case "enter":
 			if m.searching {
 				return m, nil
@@ -106,19 +108,11 @@ func (m searchModel) Update(msg tea.Msg) (searchModel, tea.Cmd) {
 				}
 			}
 		case "esc":
-			if !m.searchInput.Focused() {
-				m.searchInput.Focus()
-				m.list.ResetSelected()
-			}
-		// Add support for focusing list with tab or arrow keys from input
 		case "down", "j":
 			if m.searchInput.Focused() {
 				m.searchInput.Blur()
 			}
 		case "up", "k":
-			if m.searchInput.Focused() {
-				// Stay in input mode if up key pressed while focused
-			}
 		case "tab":
 			if m.searchInput.Focused() {
 				m.searchInput.Blur()
@@ -158,6 +152,9 @@ func (m searchModel) Update(msg tea.Msg) (searchModel, tea.Cmd) {
 	if m.searchInput.Focused() {
 		m.searchInput, cmd = m.searchInput.Update(msg)
 	} else {
+		if km, ok := msg.(tea.KeyMsg); ok && km.String() == "esc" {
+			return m, nil
+		}
 		m.list, cmd = m.list.Update(msg)
 	}
 
