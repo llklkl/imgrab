@@ -140,9 +140,7 @@ func (m progressModel) Update(msg tea.Msg) (progressModel, tea.Cmd) {
 
 		switch key {
 		case "q", "ctrl+c", "esc":
-			if m.done && !m.importing {
-				return m, tea.Quit
-			}
+			return m, tea.Quit
 		}
 	case progressMsg:
 		m.progress = msg.progress
@@ -154,11 +152,13 @@ func (m progressModel) Update(msg tea.Msg) (progressModel, tea.Cmd) {
 		m.tarPath = msg.tarPath
 		if m.err != nil {
 			m.done = true
+			return m, tea.Quit
 		} else if m.action == actionImportDocker {
 			m.importing = true
 			return m, m.startImport()
 		} else {
 			m.done = true
+			return m, tea.Quit
 		}
 	case importDoneMsg:
 		m.importing = false
@@ -166,6 +166,7 @@ func (m progressModel) Update(msg tea.Msg) (progressModel, tea.Cmd) {
 		if msg.err != nil && m.err == nil {
 			m.err = msg.err
 		}
+		return m, tea.Quit
 	}
 	return m, nil
 }

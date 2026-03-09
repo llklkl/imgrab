@@ -142,10 +142,7 @@ func (m searchModel) Update(msg tea.Msg) (searchModel, tea.Cmd) {
 				m.list.ResetSelected()
 			}
 		case "ctrl+c":
-			if m.searchInput.Focused() {
-				return m, tea.Quit
-			}
-			return m, nil
+			return m, tea.Quit
 		}
 
 	case searchResultMsg:

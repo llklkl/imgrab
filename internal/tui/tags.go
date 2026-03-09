@@ -86,8 +86,7 @@ func (m tagsModel) Update(msg tea.Msg) (tagsModel, tea.Cmd) {
 			m.back = true
 			return m, nil
 		case "ctrl+c":
-			// 禁用 Ctrl+C
-			return m, nil
+			return m, tea.Quit
 		case "up", "k", "down", "j":
 			if m.loading {
 				return m, nil

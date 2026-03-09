@@ -97,6 +97,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.windowSize = ws
 	}
 
+	if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "ctrl+c" {
+		return m, tea.Quit
+	}
+
 	switch m.state {
 	case stateSearchInput:
 		var cmd tea.Cmd
