@@ -3,3 +3,4 @@ imgrab
 .trae/
 tmp/
 *.tar
+.sisyphus/

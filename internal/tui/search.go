@@ -25,20 +25,28 @@ type searchItem struct {
 	owner       string
 }
 
-func (i searchItem) Title() string { return i.name }
-func (i searchItem) Description() string {
-	desc := i.description
-	parts := []string{}
+func (i searchItem) Title() string {
 	if i.owner != "" {
-		parts = append(parts, fmt.Sprintf("Owner: %s", i.owner))
+		return fmt.Sprintf("%s/%s", i.owner, i.name)
 	}
+	return i.name
+}
+
+func (i searchItem) Description() string {
+	parts := []string{}
 	parts = append(parts, fmt.Sprintf("Stars: %d | Pulls: %s", i.stars, registry.FormatNumber(i.pullCount)))
-	if desc != "" {
-		parts = append(parts, desc)
+	if i.description != "" {
+		parts = append(parts, i.description)
 	}
 	return strings.Join(parts, " | ")
 }
-func (i searchItem) FilterValue() string { return i.name }
+
+func (i searchItem) FilterValue() string {
+	if i.owner != "" {
+		return fmt.Sprintf("%s/%s", i.owner, i.name)
+	}
+	return i.name
+}
 
 type searchModel struct {
 	searchInput  textinput.Model
@@ -47,6 +55,7 @@ type searchModel struct {
 	selected     string
 	selectedDesc string
 	err          error
+	back         bool
 }
 
 func newSearchModel(initialQuery string) searchModel {
@@ -66,6 +75,8 @@ func newSearchModel(initialQuery string) searchModel {
 	l.Title = "Docker Images"
 	l.SetShowStatusBar(false)
 	l.SetFilteringEnabled(false)
+	l.SetShowHelp(false)
+	l.SetShowPagination(false)
 
 	return searchModel{
 		searchInput: ti,
@@ -104,10 +115,20 @@ func (m searchModel) Update(msg tea.Msg) (searchModel, tea.Cmd) {
 			} else {
 				if i, ok := m.list.SelectedItem().(searchItem); ok {
 					m.selected = i.name
+					if i.owner != "" {
+						m.selected = fmt.Sprintf("%s/%s", i.owner, i.name)
+					}
 					m.selectedDesc = i.description
 				}
 			}
-		case "esc":
+		case "esc", "q":
+			if !m.searchInput.Focused() && !m.searching {
+				m.back = true
+				m.searchInput.Focus()
+				m.searchInput.CursorEnd()
+				m.searchInput.SetCursor(len(m.searchInput.Value()))
+				return m, nil
+			}
 		case "down", "j":
 			if m.searchInput.Focused() {
 				m.searchInput.Blur()
@@ -121,11 +142,10 @@ func (m searchModel) Update(msg tea.Msg) (searchModel, tea.Cmd) {
 				m.list.ResetSelected()
 			}
 		case "ctrl+c":
-			return m, tea.Quit
-		case "q":
-			if !m.searchInput.Focused() {
+			if m.searchInput.Focused() {
 				return m, tea.Quit
 			}
+			return m, nil
 		}
 
 	case searchResultMsg:
@@ -152,7 +172,7 @@ func (m searchModel) Update(msg tea.Msg) (searchModel, tea.Cmd) {
 	if m.searchInput.Focused() {
 		m.searchInput, cmd = m.searchInput.Update(msg)
 	} else {
-		if km, ok := msg.(tea.KeyMsg); ok && km.String() == "esc" {
+		if km, ok := msg.(tea.KeyMsg); ok && (km.String() == "esc" || km.String() == "q") {
 			return m, nil
 		}
 		m.list, cmd = m.list.Update(msg)
@@ -174,7 +194,7 @@ func (m searchModel) View() string {
 		b.WriteString(fmt.Sprintf("Error: %v\n", m.err))
 	} else if !m.searchInput.Focused() {
 		b.WriteString(docStyle.Render(m.list.View()))
-		b.WriteString("\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("#666")).Render("Press Enter to select, Esc to return"))
+		b.WriteString("\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("#666")).Render("Press Enter to select, Esc/q to return"))
 	} else {
 		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#666")).Render("Press Enter to search, Ctrl+C to quit"))
 	}
@@ -210,5 +230,6 @@ func (m searchModel) resetToInput() searchModel {
 	m.list.ResetSelected()
 	m.selected = ""
 	m.selectedDesc = ""
+	m.back = false
 	return m
 }

@@ -10,23 +10,26 @@ import (
 type state int
 
 const (
-	stateSearch state = iota
+	stateSearchInput state = iota
+	stateSearchResults
 	stateTags
-	stateConfirm
-	stateProgress
+	stateArchSelect
+	stateDownload
 	stateDone
 )
 
 func (s state) String() string {
 	switch s {
-	case stateSearch:
-		return "Search"
+	case stateSearchInput:
+		return "SearchInput"
+	case stateSearchResults:
+		return "SearchResults"
 	case stateTags:
 		return "Tags"
-	case stateConfirm:
-		return "Confirm"
-	case stateProgress:
-		return "Progress"
+	case stateArchSelect:
+		return "ArchSelect"
+	case stateDownload:
+		return "Download"
 	case stateDone:
 		return "Done"
 	default:
@@ -38,9 +41,11 @@ type Model struct {
 	state      state
 	search     searchModel
 	tags       tagsModel
+	arch       archModel
 	confirm    confirmModel
-	progress   progressModel
+	download   progressModel
 	selected   SelectedImage
+	action     int
 	windowSize tea.WindowSizeMsg
 }
 
@@ -53,11 +58,11 @@ type SelectedImage struct {
 
 func NewModel(initialQuery string) Model {
 	return Model{
-		state:    stateSearch,
-		search:   newSearchModel(initialQuery),
-		tags:     newTagsModel(),
-		confirm:  newConfirmModel(),
-		progress: progressModel{},
+		state:   stateSearchInput,
+		search:  newSearchModel(initialQuery),
+		tags:    newTagsModel(),
+		arch:    newArchModel(),
+		confirm: newConfirmModel(),
 	}
 }
 
@@ -93,7 +98,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	switch m.state {
-	case stateSearch:
+	case stateSearchInput:
 		var cmd tea.Cmd
 		m.search, cmd = m.search.Update(msg)
 
@@ -113,14 +118,49 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			return m, m.tags.Init()
 		}
+
+		if (m.search.searching && !m.search.searchInput.Focused()) ||
+			(!m.search.searchInput.Focused() && len(m.search.list.Items()) > 0) {
+			m.state = stateSearchResults
+			return m, cmd
+		}
 		return m, cmd
+
+	case stateSearchResults:
+		var cmd tea.Cmd
+		m.search, cmd = m.search.Update(msg)
+
+		if m.search.back {
+			m.search.back = false
+			m.state = stateSearchInput
+			return m, cmd
+		}
+
+		if m.search.selected != "" {
+			selectedRepo := m.search.selected
+			m.search.selected = ""
+			m.search.selectedDesc = ""
+
+			m.selected.Name = selectedRepo
+			m.state = stateTags
+			m.tags.repository = selectedRepo
+
+			if m.windowSize.Width > 0 && m.windowSize.Height > 0 {
+				h, v := 2, 4
+				m.tags.list.SetSize(m.windowSize.Width-h, m.windowSize.Height-v-5)
+			}
+
+			return m, m.tags.Init()
+		}
+		return m, cmd
+
 	case stateTags:
 		var cmd tea.Cmd
 
 		m.tags, cmd = m.tags.Update(msg)
 
 		if m.tags.back {
-			m.state = stateSearch
+			m.state = stateSearchResults
 			m.tags.back = false
 			m.tags.selected = ""
 			m.tags.repository = ""
@@ -128,7 +168,6 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.tags.list.SetItems(nil)
 			m.tags.err = nil
 			m.tags.loading = false
-			m.search.searchInput.Blur()
 			m.search.list.ResetSelected()
 			m.search.selected = ""
 			m.search.selectedDesc = ""
@@ -138,61 +177,80 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		if m.tags.selected != "" {
 			m.selected.Tag = m.tags.selected
-			m.state = stateConfirm
-			m.confirm.image = m.selected
+			m.state = stateArchSelect
+			m.arch.image = m.selected
 			return m, nil
 		}
 
 		return m, cmd
-	case stateConfirm:
+
+	case stateArchSelect:
 		var cmd tea.Cmd
-		m.confirm, cmd = m.confirm.Update(msg)
-		if m.confirm.confirmed {
-			m.selected.Arch = m.confirm.arch()
-			m.state = stateProgress
-			m.progress.image = m.selected
-			return m, m.progress.startDownload()
+		m.arch, cmd = m.arch.Update(msg)
+		if m.arch.confirmed {
+			m.selected.Arch = m.arch.arch()
+			m.state = stateDownload
+			m.confirm.image = m.selected
+			return m, nil
 		}
-		if m.confirm.back {
+		if m.arch.back {
 			m.state = stateTags
-			m.confirm.back = false
-			m.confirm.confirmed = false
+			m.arch.back = false
+			m.arch.confirmed = false
 			m.tags.selected = ""
 			m.tags.list.ResetSelected()
 			return m, nil
 		}
 		return m, cmd
-	case stateProgress:
+
+	case stateDownload:
 		var cmd tea.Cmd
-		m.progress, cmd = m.progress.Update(msg)
-		if m.progress.done {
+		m.confirm, cmd = m.confirm.Update(msg)
+		if m.confirm.confirmed {
+			m.action = m.confirm.action()
 			m.state = stateDone
-			return m, tea.Quit
+			m.download.image = m.selected
+			m.download.action = m.action
+			m.download.downloading = true
+			return m, m.download.startDownload()
+		}
+		if m.confirm.back {
+			m.state = stateArchSelect
+			m.confirm.back = false
+			m.confirm.confirmed = false
+			m.arch.confirmed = false
+			m.arch.back = false
+			return m, nil
 		}
 		return m, cmd
+
 	case stateDone:
+		var cmd tea.Cmd
+		m.download, cmd = m.download.Update(msg)
 		if msg, ok := msg.(tea.KeyMsg); ok {
 			if msg.String() == "q" || msg.String() == "ctrl+c" {
 				return m, tea.Quit
 			}
 		}
-		return m, nil
+		return m, cmd
 	}
 	return m, nil
 }
 
 func (m Model) View() string {
 	switch m.state {
-	case stateSearch:
+	case stateSearchInput:
+		return m.search.View()
+	case stateSearchResults:
 		return m.search.View()
 	case stateTags:
 		return m.tags.View()
-	case stateConfirm:
+	case stateArchSelect:
+		return m.arch.View()
+	case stateDownload:
 		return m.confirm.View()
-	case stateProgress:
-		return m.progress.View()
 	case stateDone:
-		return fmt.Sprintf("Download complete!\n\nPress q or Ctrl+C to exit\n")
+		return m.download.View()
 	}
 	return ""
 }

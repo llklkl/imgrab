@@ -66,6 +66,8 @@ func (m tagsModel) Update(msg tea.Msg) (tagsModel, tea.Cmd) {
 		return m, nil
 	}
 
+	var cmd tea.Cmd
+
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		key := msg.String()
@@ -80,11 +82,12 @@ func (m tagsModel) Update(msg tea.Msg) (tagsModel, tea.Cmd) {
 					m.selected = i.name
 				}
 			}
-		case "esc":
+		case "esc", "q":
 			m.back = true
 			return m, nil
-		case "q", "ctrl+c":
-			return m, tea.Quit
+		case "ctrl+c":
+			// 禁用 Ctrl+C
+			return m, nil
 		case "up", "k", "down", "j":
 			if m.loading {
 				return m, nil
@@ -105,25 +108,29 @@ func (m tagsModel) Update(msg tea.Msg) (tagsModel, tea.Cmd) {
 		m.list.SetItems(items)
 		return m, nil
 	case tea.WindowSizeMsg:
-		h, v := 2, 4
+		h, v := docStyle.GetFrameSize()
 		m.list.SetSize(msg.Width-h, msg.Height-v-5)
 	}
 
-	return m, nil
+	m.list, cmd = m.list.Update(msg)
+
+	return m, cmd
 }
 
 func (m tagsModel) View() string {
 	var b strings.Builder
 
-	b.WriteString(fmt.Sprintf("Image: %s\n\n", m.repository))
+	b.WriteString(titleStyle.Render("Select Tag") + "\n\n")
+	b.WriteString(fmt.Sprintf("Image: %s\n\n", highlightStyle.Render(m.repository)))
 
 	if m.loading {
 		b.WriteString("Loading tags...\n")
 	} else if m.err != nil {
 		b.WriteString(fmt.Sprintf("Error: %v\n", m.err))
 	} else {
-		b.WriteString(lipgloss.NewStyle().Margin(1, 2).Render(m.list.View()))
-		b.WriteString("\n" + lipgloss.NewStyle().Foreground(lipgloss.Color("#666")).Render("Press Enter to select, Esc to return"))
+		b.WriteString(docStyle.Render(m.list.View()))
+		b.WriteString("\n")
+		b.WriteString(lipgloss.NewStyle().Foreground(lipgloss.Color("#666")).Render("Press Enter to select, Esc/q to return"))
 	}
 
 	return b.String()

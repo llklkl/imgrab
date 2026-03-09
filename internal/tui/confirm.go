@@ -22,32 +22,35 @@ var (
 	highlightStyle = lipgloss.NewStyle().
 			Foreground(lipgloss.Color("212"))
 
-	archOptionStyle = lipgloss.NewStyle().
+	optionStyle = lipgloss.NewStyle().
 			Padding(0, 1).
 			MarginRight(1)
 
-	archSelectedStyle = archOptionStyle.Copy().
+	optionSelectedStyle = optionStyle.Copy().
 				Foreground(lipgloss.Color("229")).
 				Background(lipgloss.Color("63"))
 )
 
+const (
+	actionDownloadOnly = iota
+	actionImportDocker
+)
+
 type confirmModel struct {
-	image     SelectedImage
-	archIndex int
-	confirmed bool
-	back      bool
+	image        SelectedImage
+	actionIndex  int
+	confirmed    bool
+	back         bool
 }
 
-var archList = []string{
-	"linux/amd64",
-	"linux/arm64",
-	"linux/arm/v7",
-	"linux/386",
+var actionList = []string{
+	"Download Only",
+	"Import to Docker",
 }
 
 func newConfirmModel() confirmModel {
 	return confirmModel{
-		archIndex: 0,
+		actionIndex: actionImportDocker,
 	}
 }
 
@@ -62,15 +65,13 @@ func (m confirmModel) Update(msg tea.Msg) (confirmModel, tea.Cmd) {
 
 		switch key {
 		case "left", "h":
-			if m.archIndex > 0 {
-				m.archIndex--
+			if m.actionIndex > 0 {
+				m.actionIndex--
 			}
 		case "right", "l":
-			if m.archIndex < len(archList)-1 {
-				m.archIndex++
+			if m.actionIndex < len(actionList)-1 {
+				m.actionIndex++
 			}
-		case "down", "j":
-		case "up", "k":
 		case "y", "Y", "enter":
 			m.confirmed = true
 		case "n", "N", "esc":
@@ -85,16 +86,17 @@ func (m confirmModel) Update(msg tea.Msg) (confirmModel, tea.Cmd) {
 func (m confirmModel) View() string {
 	var b strings.Builder
 
-	b.WriteString(titleStyle.Render("Confirm Download") + "\n\n")
+	b.WriteString(titleStyle.Render("Confirm Action") + "\n\n")
 	b.WriteString(fmt.Sprintf("Image: %s\n", highlightStyle.Render(m.image.Name)))
-	b.WriteString(fmt.Sprintf("Tag: %s\n\n", highlightStyle.Render(m.image.Tag)))
+	b.WriteString(fmt.Sprintf("Tag: %s\n", highlightStyle.Render(m.image.Tag)))
+	b.WriteString(fmt.Sprintf("Architecture: %s\n\n", highlightStyle.Render(m.image.Arch)))
 
-	b.WriteString("Select Architecture (←/→ to switch):\n\n")
-	for i, arch := range archList {
-		if i == m.archIndex {
-			b.WriteString(archSelectedStyle.Render(arch))
+	b.WriteString("Select Action (←/→ to switch):\n\n")
+	for i, action := range actionList {
+		if i == m.actionIndex {
+			b.WriteString(optionSelectedStyle.Render(action))
 		} else {
-			b.WriteString(archOptionStyle.Render(arch))
+			b.WriteString(optionStyle.Render(action))
 		}
 	}
 
@@ -104,6 +106,6 @@ func (m confirmModel) View() string {
 	return confirmStyle.Render(b.String())
 }
 
-func (m confirmModel) arch() string {
-	return archList[m.archIndex]
+func (m confirmModel) action() int {
+	return m.actionIndex
 }
