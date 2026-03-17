@@ -17,8 +17,7 @@ func ImportTarToDocker(tarPath string) error {
 	}
 	defer file.Close()
 
-	cmd := exec.Command("docker", "load", "-i", "-")
-	cmd.Stdin = file
+	cmd := exec.Command("docker", "load", "-i", tarPath)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
