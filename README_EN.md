@@ -6,12 +6,11 @@ imgrab is a Docker image pull CLI tool written in Go, providing image search, pu
 
 ## Features
 
-- 🔍 **Interactive Search** - TUI interface to search Docker Hub images with visual selection of versions and architectures
-- ⚡ **One-Click Import** - Auto-imports to Docker by default, no need to manually run `docker load`
-- 📦 **Smart Download** - Saves tar files in download-only mode, auto-cleans temp files in import mode
-- 🏗️ **Multi-Architecture** - Supports multiple architectures like amd64, arm64, etc.
-- 🔐 **Private Registry** - Supports login to private Docker registries
-- 💾 **Local Cache** - Reuses Docker config files, automatically manages authentication
+- Search Docker Hub images (TUI interface)
+- Auto-import to Docker by default
+- Download-only mode (save tar file)
+- Multi-architecture support
+- Private registry authentication
 
 ## Installation
 
