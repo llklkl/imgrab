@@ -54,12 +54,6 @@ jobs:
           go build -ldflags="-s -w" -o "$output_name" .
           echo "Built: $output_name"
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: imgrab-${{ matrix.os }}-${{ matrix.arch }}
-          path: imgrab-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}
-
       - name: Upload release
         uses: svenstaro/upload-release-action@v2
         with:
