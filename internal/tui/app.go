@@ -2,10 +2,21 @@ package tui
 
 import (
 	"fmt"
+	"log"
+	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/llklkl/imgrab/internal/registry"
 )
+
+var debugLog *log.Logger
+
+func init() {
+	f, err := os.OpenFile("/tmp/imgrab_debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+	if err == nil {
+		debugLog = log.New(f, "[DEBUG] ", log.Ltime|log.Lmicroseconds)
+	}
+}
 
 type state int
 
@@ -192,10 +203,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.arch, cmd = m.arch.Update(msg)
 		if m.arch.confirmed {
+			debugLog.Printf("ArchSelect confirmed: image=%s:%s arch=%s", m.selected.Name, m.selected.Tag, m.arch.arch())
 			m.selected.Arch = m.arch.arch()
 			m.state = stateDownload
 			m.confirm.image = m.selected
-			return m, nil
+			m.download.image = m.selected
+			m.download.action = actionImportDocker
+			m.download.downloading = true
+			debugLog.Printf("State changed to stateDownload, starting download")
+			return m, tea.Batch(m.download.startDownload(), m.download.Init())
 		}
 		if m.arch.back {
 			m.state = stateTags
@@ -208,15 +224,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, cmd
 
 	case stateDownload:
-		var cmd tea.Cmd
-		m.confirm, cmd = m.confirm.Update(msg)
+		var confirmCmd, downloadCmd tea.Cmd
+		debugLog.Printf("stateDownload: received msg type=%T", msg)
+		m.confirm, confirmCmd = m.confirm.Update(msg)
+		m.download, downloadCmd = m.download.Update(msg)
+
 		if m.confirm.confirmed {
+			debugLog.Printf("Confirm confirmed: action=%d, download.done=%v", m.confirm.action(), m.download.done)
 			m.action = m.confirm.action()
-			m.state = stateDone
-			m.download.image = m.selected
 			m.download.action = m.action
-			m.download.downloading = true
-			return m, m.download.startDownload()
 		}
 		if m.confirm.back {
 			m.state = stateArchSelect
@@ -226,13 +242,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.arch.back = false
 			return m, nil
 		}
-		return m, cmd
+		return m, tea.Batch(confirmCmd, downloadCmd)
 
 	case stateDone:
 		var cmd tea.Cmd
+		debugLog.Printf("stateDone: received msg type=%T, download.done=%v", msg, m.download.done)
 		m.download, cmd = m.download.Update(msg)
 		if msg, ok := msg.(tea.KeyMsg); ok {
 			if msg.String() == "q" || msg.String() == "ctrl+c" {
+				debugLog.Printf("stateDone: user requested quit")
 				return m, tea.Quit
 			}
 		}
@@ -252,9 +270,13 @@ func (m Model) View() string {
 	case stateArchSelect:
 		return m.arch.View()
 	case stateDownload:
-		return m.confirm.View()
+		return m.confirmDownloadView()
 	case stateDone:
 		return m.download.View()
 	}
 	return ""
+}
+
+func (m Model) confirmDownloadView() string {
+	return m.download.View()
 }

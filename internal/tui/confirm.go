@@ -37,10 +37,10 @@ const (
 )
 
 type confirmModel struct {
-	image        SelectedImage
-	actionIndex  int
-	confirmed    bool
-	back         bool
+	image       SelectedImage
+	actionIndex int
+	confirmed   bool
+	back        bool
 }
 
 var actionList = []string{
@@ -83,7 +83,7 @@ func (m confirmModel) Update(msg tea.Msg) (confirmModel, tea.Cmd) {
 	return m, nil
 }
 
-func (m confirmModel) View() string {
+func (m confirmModel) contentView() string {
 	var b strings.Builder
 
 	b.WriteString(titleStyle.Render("Confirm Action") + "\n\n")
@@ -103,7 +103,11 @@ func (m confirmModel) View() string {
 	b.WriteString("\n\n")
 	b.WriteString("Press y/Enter to confirm, n/Esc to return\n")
 
-	return confirmStyle.Render(b.String())
+	return b.String()
+}
+
+func (m confirmModel) View() string {
+	return confirmStyle.Render(m.contentView())
 }
 
 func (m confirmModel) action() int {
