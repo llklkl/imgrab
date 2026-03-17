@@ -4,6 +4,15 @@
 
 imgrab 是一个用 Go 开发的 Docker 镜像拉取 CLI 工具，提供镜像搜索、拉取、保存、导入等功能，支持 Docker Hub 和私有仓库。
 
+## 特性
+
+- 🔍 **交互式搜索** - TUI 界面搜索 Docker Hub 镜像，可视化选择版本和架构
+- ⚡ **一键导入** - 默认自动导入 Docker，无需手动执行 `docker load`
+- 📦 **智能下载** - 仅下载模式下保存 tar 文件，导入模式下自动清理临时文件
+- 🏗️ **多架构支持** - 支持 amd64、arm64 等多种架构选择
+- 🔐 **私有仓库** - 支持登录私有 Docker 仓库
+- 💾 **本地缓存** - 复用 Docker 配置文件，自动管理认证信息
+
 ## 安装
 
 ```bash
@@ -16,7 +25,7 @@ go build -o imgrab .
 
 ### pull - 拉取镜像
 
-从 Docker Hub 或私有仓库拉取镜像并保存为 tar 文件。
+从 Docker Hub 或私有仓库拉取镜像。**默认自动导入 Docker**，无需手动操作。
 
 ```bash
 ./imgrab pull [image] [flags]
@@ -26,31 +35,35 @@ go build -o imgrab .
 - `image`: 镜像名称，格式为 `[registry/]repository[:tag]`
 
 **Flags：**
-- `-o, --output string`: 输出目录
+- `-d, --download-only`: 仅下载，不导入 Docker
+- `-o, --output string`: 输出目录（仅与 `--download-only` 一起使用）
 - `-a, --arch string`: 架构（默认：当前架构）
-- `-i, --import`: 拉取后导入 Docker
 
 **示例：**
 ```bash
-# 拉取 nginx 最新版
+# 拉取并自动导入 Docker（默认行为）
 ./imgrab pull nginx
 
-# 拉取指定版本
+# 拉取指定版本并导入
 ./imgrab pull nginx:1.25.3
 
-# 拉取并保存到指定目录
-./imgrab pull nginx -o ./images
+# 仅下载，不导入
+./imgrab pull nginx --download-only
+
+# 仅下载到指定目录
+./imgrab pull nginx -d -o ./images
 
 # 指定架构
 ./imgrab pull nginx -a arm64
-
-# 拉取后自动导入 Docker
-./imgrab pull nginx -i
 ```
+
+**说明：**
+- 默认模式下，镜像会下载到临时目录并自动导入 Docker，完成后自动清理临时文件
+- 使用 `--download-only` 可保留 tar 文件到当前目录或指定目录
 
 ### search - 搜索镜像（TUI 界面）
 
-使用交互式 TUI 界面搜索 Docker Hub 镜像。
+使用交互式 TUI 界面搜索 Docker Hub 镜像，支持可视化选择镜像、标签、架构，并选择下载或导入操作。
 
 ```bash
 ./imgrab search [query]
@@ -68,12 +81,34 @@ go build -o imgrab .
 ./imgrab search nginx
 ```
 
-**TUI 操作：**
-- 在搜索框输入关键词，按 `Enter` 开始搜索
-- 使用方向键 `↑`/`↓` 选择镜像，按 `Enter` 查看版本
-- 在版本列表选择版本，按 `Enter` 确认下载
-- 在确认弹窗选择架构（←/→ 切换），按 `y`/`Enter` 确认下载
-- 按 `Esc` 返回上一级，按 `q`/`Ctrl+C` 退出
+**TUI 操作流程：**
+
+1. **搜索镜像**
+   - 在搜索框输入关键词，按 `Enter` 开始搜索
+   - 使用 `↑`/`↓` 选择镜像，按 `Enter` 查看版本列表
+
+2. **选择版本**
+   - 使用 `↑`/`↓` 选择版本标签
+   - 按 `Enter` 查看可用架构
+
+3. **选择架构**
+   - 使用 `↑`/`↓` 选择架构
+   - 按 `Enter` 进入确认界面
+
+4. **确认操作**
+   - 使用 `←`/`→` 切换操作模式：
+     - `Download Only` - 仅下载镜像文件
+     - `Import to Docker` - 下载并导入到 Docker（默认）
+   - 按 `y` 或 `Enter` 确认并开始下载
+   - 下载/导入完成后自动退出
+
+5. **进度显示**
+   - 实时显示下载进度条、速度和剩余时间
+   - 导入完成后自动退出
+
+**快捷键：**
+- `Esc` - 返回上一级
+- `q` / `Ctrl+C` - 退出应用
 
 ### login - 登录仓库
 

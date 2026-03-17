@@ -4,6 +4,15 @@ English | [中文](README.md)
 
 imgrab is a Docker image pull CLI tool written in Go, providing image search, pull, save, and import functionality, supporting Docker Hub and private registries.
 
+## Features
+
+- 🔍 **Interactive Search** - TUI interface to search Docker Hub images with visual selection of versions and architectures
+- ⚡ **One-Click Import** - Auto-imports to Docker by default, no need to manually run `docker load`
+- 📦 **Smart Download** - Saves tar files in download-only mode, auto-cleans temp files in import mode
+- 🏗️ **Multi-Architecture** - Supports multiple architectures like amd64, arm64, etc.
+- 🔐 **Private Registry** - Supports login to private Docker registries
+- 💾 **Local Cache** - Reuses Docker config files, automatically manages authentication
+
 ## Installation
 
 ```bash
@@ -16,7 +25,7 @@ go build -o imgrab .
 
 ### pull - Pull an Image
 
-Pull a Docker image from a registry and save it as a tar file.
+Pull a Docker image from a registry. **Automatically imports to Docker by default**, no manual action required.
 
 ```bash
 ./imgrab pull [image] [flags]
@@ -26,31 +35,35 @@ Pull a Docker image from a registry and save it as a tar file.
 - `image`: Image name in format `[registry/]repository[:tag]`
 
 **Flags:**
-- `-o, --output string`: Output directory
+- `-d, --download-only`: Download only, do not import to Docker
+- `-o, --output string`: Output directory (only with `--download-only`)
 - `-a, --arch string`: Architecture (default: current architecture)
-- `-i, --import`: Import to Docker after pulling
 
 **Examples:**
 ```bash
-# Pull nginx latest
+# Pull and auto-import to Docker (default behavior)
 ./imgrab pull nginx
 
-# Pull specific version
+# Pull specific version and import
 ./imgrab pull nginx:1.25.3
 
-# Pull and save to specific directory
-./imgrab pull nginx -o ./images
+# Download only, do not import
+./imgrab pull nginx --download-only
+
+# Download only to specific directory
+./imgrab pull nginx -d -o ./images
 
 # Specify architecture
 ./imgrab pull nginx -a arm64
-
-# Import to Docker after pulling
-./imgrab pull nginx -i
 ```
+
+**Notes:**
+- In default mode, the image is downloaded to a temporary directory and automatically imported to Docker, then the temp files are cleaned up
+- Use `--download-only` to keep the tar file in the current or specified directory
 
 ### search - Search Images (TUI Interface)
 
-Search Docker Hub images using an interactive TUI interface.
+Search Docker Hub images using an interactive TUI interface. Supports visual selection of images, tags, architectures, and choice between download or import operations.
 
 ```bash
 ./imgrab search [query]
@@ -68,12 +81,34 @@ Search Docker Hub images using an interactive TUI interface.
 ./imgrab search nginx
 ```
 
-**TUI Controls:**
-- Enter keyword in search box, press `Enter` to start search
-- Use arrow keys `↑`/`↓` to select image, press `Enter` to view tags
-- Select tag in tag list, press `Enter` to confirm download
-- Select architecture in confirmation dialog (←/→ to switch), press `y`/`Enter` to confirm download
-- Press `Esc` to go back, press `q`/`Ctrl+C` to quit
+**TUI Workflow:**
+
+1. **Search Images**
+   - Enter keyword in search box, press `Enter` to start search
+   - Use `↑`/`↓` to select an image, press `Enter` to view tags
+
+2. **Select Version**
+   - Use `↑`/`↓` to select a version tag
+   - Press `Enter` to view available architectures
+
+3. **Select Architecture**
+   - Use `↑`/`↓` to select an architecture
+   - Press `Enter` to enter confirmation screen
+
+4. **Confirm Operation**
+   - Use `←`/`→` to switch operation mode:
+     - `Download Only` - Download image file only
+     - `Import to Docker` - Download and import to Docker (default)
+   - Press `y` or `Enter` to confirm and start download
+   - Auto-exits after download/import completes
+
+5. **Progress Display**
+   - Real-time progress bar with speed and ETA
+   - Auto-exits after completion
+
+**Keyboard Shortcuts:**
+- `Esc` - Go back to previous screen
+- `q` / `Ctrl+C` - Exit application
 
 ### login - Login to Registry
 
