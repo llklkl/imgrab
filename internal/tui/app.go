@@ -2,21 +2,10 @@ package tui
 
 import (
 	"fmt"
-	"log"
-	"os"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/llklkl/imgrab/internal/registry"
 )
-
-var debugLog *log.Logger
-
-func init() {
-	f, err := os.OpenFile("/tmp/imgrab_debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err == nil {
-		debugLog = log.New(f, "[DEBUG] ", log.Ltime|log.Lmicroseconds)
-	}
-}
 
 type state int
 
@@ -203,13 +192,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		var cmd tea.Cmd
 		m.arch, cmd = m.arch.Update(msg)
 		if m.arch.confirmed {
-			debugLog.Printf("ArchSelect confirmed: image=%s:%s arch=%s", m.selected.Name, m.selected.Tag, m.arch.arch())
 			m.selected.Arch = m.arch.arch()
 			m.state = stateDownload
 			m.confirm.image = m.selected
 			m.download.image = m.selected
 			m.download.action = actionImportDocker
-			debugLog.Printf("State changed to stateDownload, waiting for user confirmation")
 			return m, m.download.Init()
 		}
 		if m.arch.back {
@@ -224,12 +211,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case stateDownload:
 		var confirmCmd, downloadCmd tea.Cmd
-		debugLog.Printf("stateDownload: received msg type=%T", msg)
 		m.confirm, confirmCmd = m.confirm.Update(msg)
 		m.download, downloadCmd = m.download.Update(msg)
 
 		if m.confirm.confirmed {
-			debugLog.Printf("Confirm confirmed: action=%d", m.confirm.action())
 			m.action = m.confirm.action()
 			m.download.action = m.action
 			m.download.downloading = true
@@ -248,11 +233,9 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case stateDone:
 		var cmd tea.Cmd
-		debugLog.Printf("stateDone: received msg type=%T, download.done=%v", msg, m.download.done)
 		m.download, cmd = m.download.Update(msg)
 		if msg, ok := msg.(tea.KeyMsg); ok {
 			if msg.String() == "q" || msg.String() == "ctrl+c" {
-				debugLog.Printf("stateDone: user requested quit")
 				return m, tea.Quit
 			}
 		}

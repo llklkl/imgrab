@@ -2,8 +2,6 @@ package tui
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"strings"
 	"time"
 
@@ -13,15 +11,6 @@ import (
 	"github.com/llklkl/imgrab/internal/docker"
 	"github.com/llklkl/imgrab/internal/registry"
 )
-
-var progressDebugLog *log.Logger
-
-func init() {
-	f, err := os.OpenFile("/tmp/imgrab_progress_debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
-	if err == nil {
-		progressDebugLog = log.New(f, "[PROGRESS] ", log.Ltime|log.Lmicroseconds)
-	}
-}
 
 var (
 	progressStyle = lipgloss.NewStyle().
@@ -71,8 +60,6 @@ type tickMsg struct {
 }
 
 func (m *progressModel) startDownload() tea.Cmd {
-	progressDebugLog.Printf("startDownload called for image=%s:%s arch=%s", m.image.Name, m.image.Tag, m.image.Arch)
-
 	imageRef := fmt.Sprintf("%s:%s", m.image.Name, m.image.Tag)
 	arch := m.image.Arch
 	if arch == "" {
@@ -94,10 +81,8 @@ func (m *progressModel) startDownload() tea.Cmd {
 	doneChan := m.doneChan
 
 	go func() {
-		progressDebugLog.Printf("goroutine: parsing image ref=%s arch=%s", imageRef, arch)
 		ref, err := registry.ParseImageRef(imageRef, arch, "")
 		if err != nil {
-			progressDebugLog.Printf("goroutine: parse image ref error: %v", err)
 			doneChan <- struct {
 				tarPath string
 				err     error
@@ -105,10 +90,8 @@ func (m *progressModel) startDownload() tea.Cmd {
 			return
 		}
 
-		progressDebugLog.Printf("goroutine: getting credential for registry=%s", ref.Registry)
 		auth, err := registry.GetCredential(ref.Registry)
 		if err != nil {
-			progressDebugLog.Printf("goroutine: get credential error: %v", err)
 			doneChan <- struct {
 				tarPath string
 				err     error
@@ -116,11 +99,9 @@ func (m *progressModel) startDownload() tea.Cmd {
 			return
 		}
 
-		progressDebugLog.Printf("goroutine: pulling image")
 		client := registry.NewClient().WithAuth(auth)
 		img, err := client.PullImage(ref)
 		if err != nil {
-			progressDebugLog.Printf("goroutine: pull image error: %v", err)
 			doneChan <- struct {
 				tarPath string
 				err     error
@@ -128,7 +109,6 @@ func (m *progressModel) startDownload() tea.Cmd {
 			return
 		}
 
-		progressDebugLog.Printf("goroutine: saving image to tar")
 		opts := &registry.PullOptions{
 			OutputDir:    ".",
 			ShowProgress: false,
@@ -136,7 +116,6 @@ func (m *progressModel) startDownload() tea.Cmd {
 		}
 
 		outputPath, err := registry.SaveImageToTar(img, ref, opts)
-		progressDebugLog.Printf("goroutine: save image done, outputPath=%s, err=%v", outputPath, err)
 		doneChan <- struct {
 			tarPath string
 			err     error
@@ -154,10 +133,8 @@ func (m progressModel) continueDownload(progressChan chan registry.ProgressUpdat
 		for {
 			select {
 			case update := <-progressChan:
-				progressDebugLog.Printf("progress update: progress=%d total=%d", update.Progress, update.Total)
 				return progressMsg{progress: update.Progress, total: update.Total}
 			case result := <-doneChan:
-				progressDebugLog.Printf("download done: tarPath=%s err=%v", result.tarPath, result.err)
 				return downloadDoneMsg{tarPath: result.tarPath, err: result.err}
 			}
 		}
@@ -175,24 +152,19 @@ func (m progressModel) startImport() tea.Cmd {
 }
 
 func (m progressModel) Init() tea.Cmd {
-	progressDebugLog.Printf("Init: starting tick timer")
 	return tea.Every(500*time.Millisecond, func(t time.Time) tea.Msg {
 		return tickMsg{time: t}
 	})
 }
 
 func (m progressModel) Update(msg tea.Msg) (progressModel, tea.Cmd) {
-	progressDebugLog.Printf("Update: received msg type=%T, done=%v, importing=%v", msg, m.done, m.importing)
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		key := msg.String()
-		progressDebugLog.Printf("Update: KeyMsg key=%s", key)
-		switch key {
+		switch msg.String() {
 		case "q", "ctrl+c", "esc":
 			return m, tea.Quit
 		}
 	case progressMsg:
-		progressDebugLog.Printf("Update: progressMsg progress=%d total=%d", msg.progress, msg.total)
 		m.progress = msg.progress
 		m.total = msg.total
 		if !m.downloading {
@@ -205,7 +177,6 @@ func (m progressModel) Update(msg tea.Msg) (progressModel, tea.Cmd) {
 		}
 		return m, m.continueDownload(m.progressChan, m.doneChan)
 	case downloadDoneMsg:
-		progressDebugLog.Printf("Update: downloadDoneMsg tarPath=%s err=%v action=%d", msg.tarPath, msg.err, m.action)
 		m.downloading = false
 		m.err = msg.err
 		m.tarPath = msg.tarPath
@@ -217,17 +188,14 @@ func (m progressModel) Update(msg tea.Msg) (progressModel, tea.Cmd) {
 			return m, m.startImport()
 		} else {
 			m.done = true
-			progressDebugLog.Printf("Download complete, exiting immediately")
 			return m, tea.Quit
 		}
 	case importDoneMsg:
-		progressDebugLog.Printf("Update: importDoneMsg err=%v", msg.err)
 		m.importing = false
 		m.done = true
 		if msg.err != nil && m.err == nil {
 			m.err = msg.err
 		}
-		progressDebugLog.Printf("Import complete, exiting immediately")
 		return m, tea.Quit
 	}
 	return m, nil
