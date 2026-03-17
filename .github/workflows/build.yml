@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, dev]
     tags:
-      - "v*"
+      - 'v*'
   pull_request:
     branches: [main, dev]
 
@@ -24,17 +24,17 @@ jobs:
             arch: arm64
             goos: linux
             goarch: arm64
-            ext: ""
+            ext: ''
           - os: linux
             arch: amd64
             goos: linux
             goarch: amd64
-            ext: ""
+            ext: ''
           - os: darwin
             arch: arm64
             goos: darwin
             goarch: arm64
-            ext: ""
+            ext: ''
 
     steps:
       - name: Checkout code
@@ -43,7 +43,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v6
         with:
-          go-version: "1.25.*"
+          go-version: '1.25.*'
 
       - name: Build binary
         env:
@@ -60,21 +60,12 @@ jobs:
           name: imgrab-${{ matrix.os }}-${{ matrix.arch }}
           path: imgrab-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}
 
-  release:
-    needs: build
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
+      - name: Upload release
+        uses: svenstaro/upload-release-action@v2
         with:
-          files: |
-            **/imgrab-*
-          draft: false
-          prerelease: false
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: |
+            **/imgrab-*.*
+          tag: ${{ github.ref }}
+          overwrite: true
+          file_glob: true
