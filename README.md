@@ -2,7 +2,7 @@
 
 [English](README_EN.md) | 中文
 
-imgrab 是一个用 Go 开发的 Docker 镜像拉取 CLI 工具，提供镜像搜索、拉取、保存、导入等功能，支持 Docker Hub 和私有仓库。
+imgrab 是一个用 Go 开发的 Docker 镜像拉取 CLI 工具，提供镜像搜索、拉取、保存、导入等功能，支持 Docker Hub。
 
 ## 特性
 
