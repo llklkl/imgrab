@@ -217,11 +217,8 @@ func (m progressModel) Update(msg tea.Msg) (progressModel, tea.Cmd) {
 			return m, m.startImport()
 		} else {
 			m.done = true
-			m.countdownSeconds = 3
-			m.autoExitPending = true
-			return m, tea.Tick(500*time.Millisecond, func(t time.Time) tea.Msg {
-				return tickMsg{time: t}
-			})
+			progressDebugLog.Printf("Download complete, exiting immediately")
+			return m, tea.Quit
 		}
 	case importDoneMsg:
 		progressDebugLog.Printf("Update: importDoneMsg err=%v", msg.err)
@@ -230,22 +227,8 @@ func (m progressModel) Update(msg tea.Msg) (progressModel, tea.Cmd) {
 		if msg.err != nil && m.err == nil {
 			m.err = msg.err
 		}
-		m.countdownSeconds = 3
-		m.autoExitPending = true
-		return m, tea.Tick(500*time.Millisecond, func(t time.Time) tea.Msg {
-			return tickMsg{time: t}
-		})
-	case tickMsg:
-		progressDebugLog.Printf("Update: tickMsg autoExitPending=%v countdownSeconds=%d", m.autoExitPending, m.countdownSeconds)
-		if m.autoExitPending && m.countdownSeconds > 0 {
-			m.countdownSeconds--
-			progressDebugLog.Printf("Update: tickMsg countdown decremented to %d", m.countdownSeconds)
-			if m.countdownSeconds == 0 {
-				progressDebugLog.Printf("Update: tickMsg triggering tea.Quit")
-				return m, tea.Quit
-			}
-		}
-		return m, nil
+		progressDebugLog.Printf("Import complete, exiting immediately")
+		return m, tea.Quit
 	}
 	return m, nil
 }

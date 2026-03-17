@@ -209,9 +209,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.confirm.image = m.selected
 			m.download.image = m.selected
 			m.download.action = actionImportDocker
-			m.download.downloading = true
-			debugLog.Printf("State changed to stateDownload, starting download")
-			return m, tea.Batch(m.download.startDownload(), m.download.Init())
+			debugLog.Printf("State changed to stateDownload, waiting for user confirmation")
+			return m, m.download.Init()
 		}
 		if m.arch.back {
 			m.state = stateTags
@@ -230,9 +229,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.download, downloadCmd = m.download.Update(msg)
 
 		if m.confirm.confirmed {
-			debugLog.Printf("Confirm confirmed: action=%d, download.done=%v", m.confirm.action(), m.download.done)
+			debugLog.Printf("Confirm confirmed: action=%d", m.confirm.action())
 			m.action = m.confirm.action()
 			m.download.action = m.action
+			m.download.downloading = true
+			m.state = stateDone
+			return m, tea.Batch(m.download.startDownload(), m.download.Init())
 		}
 		if m.confirm.back {
 			m.state = stateArchSelect
@@ -278,5 +280,13 @@ func (m Model) View() string {
 }
 
 func (m Model) confirmDownloadView() string {
-	return m.download.View()
+	confirmView := m.confirm.View()
+	progressContent := m.download.progressViewWithoutBorder()
+
+	if m.download.downloading && progressContent != "" {
+		// 下载已开始，显示进度
+		return m.download.View()
+	}
+	// 未开始下载，显示确认界面
+	return confirmView
 }
