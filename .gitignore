@@ -4,3 +4,5 @@ imgrab
 tmp/
 *.tar
 .sisyphus/
+docs/superpowers
+.opencode
