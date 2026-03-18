@@ -12,7 +12,7 @@ import (
 var loginCmd = &cobra.Command{
 	Use:   "login [registry]",
 	Short: "Login to a Docker registry",
-	Long: `Login to a Docker registry and save credentials to ~/.docker/config.json.
+	Long: `Login to a Docker registry and save credentials securely.
 
 If no registry is provided, defaults to Docker Hub (index.docker.io).
 If username or password are not provided via flags, they will be prompted interactively.
@@ -60,7 +60,15 @@ Examples:
 			return fmt.Errorf("save credential: %w", err)
 		}
 
+		// Show storage method
+		authMethod := registry.GetAuthMethod(registryAddr)
+		storageMethod := "encrypted file"
+		if authMethod == "keyring" {
+			storageMethod = "system keyring"
+		}
+
 		fmt.Printf("Login successful for %s\n", registryAddr)
+		fmt.Printf("Credentials stored using %s\n", storageMethod)
 		return nil
 	},
 }
