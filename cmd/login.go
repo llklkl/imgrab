@@ -56,6 +56,12 @@ Examples:
 			fmt.Println()
 		}
 
+		// Validate credentials before saving
+		fmt.Println("Validating credentials...")
+		if err := registry.ValidateCredentials(registryAddr, username, password); err != nil {
+			return fmt.Errorf("credential validation failed: %w", err)
+		}
+
 		if err := registry.SaveCredential(registryAddr, username, password); err != nil {
 			return fmt.Errorf("save credential: %w", err)
 		}
