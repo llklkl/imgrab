@@ -107,3 +107,56 @@ go build -o imgrab .
 **快捷键：**
 - `Esc` - 返回上一级
 - `q` / `Ctrl+C` - 退出应用
+
+### login - 登录仓库
+
+登录 Docker Hub 或私有仓库，凭据安全存储。
+
+```bash
+./imgrab login [registry] [flags]
+```
+
+**参数：**
+- `registry`: 可选，仓库地址（默认：Docker Hub）
+
+**Flags：**
+- `-u, --username string`: 用户名
+- `-p, --password string`: 密码
+
+**示例：**
+```bash
+# 登录 Docker Hub
+./imgrab login
+
+# 使用凭据登录 Docker Hub
+./imgrab login -u your_username -p your_password
+
+# 登录私有仓库
+./imgrab login registry.example.com
+
+# 使用凭据登录私有仓库
+./imgrab login registry.example.com -u your_username -p your_password
+```
+
+**存储方式：**
+凭据优先使用系统密钥环存储（macOS Keychain / Linux Secret Service / Windows Credential Manager），不可用时回退到加密文件存储到 `~/.config/imgrab/credentials.enc`。
+
+### logout - 登出仓库
+
+从仓库登出，删除存储的凭据。
+
+```bash
+./imgrab logout [registry]
+```
+
+**参数：**
+- `registry`: 可选，仓库地址（默认：Docker Hub）
+
+**示例：**
+```bash
+# 登出 Docker Hub
+./imgrab logout
+
+# 登出私有仓库
+./imgrab logout registry.example.com
+```

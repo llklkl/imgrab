@@ -107,3 +107,56 @@ Search Docker Hub images using an interactive TUI interface. Supports visual sel
 **Keyboard Shortcuts:**
 - `Esc` - Go back to previous screen
 - `q` / `Ctrl+C` - Exit application
+
+### login - Login to Registry
+
+Login to Docker Hub or a private registry with secure credential storage.
+
+```bash
+./imgrab login [registry] [flags]
+```
+
+**Arguments:**
+- `registry`: Optional, registry address (default: Docker Hub)
+
+**Flags:**
+- `-u, --username string`: Username
+- `-p, --password string`: Password
+
+**Examples:**
+```bash
+# Login to Docker Hub
+./imgrab login
+
+# Login to Docker Hub with credentials
+./imgrab login -u your_username -p your_password
+
+# Login to private registry
+./imgrab login registry.example.com
+
+# Login to private registry with credentials
+./imgrab login registry.example.com -u your_username -p your_password
+```
+
+**Storage Method:**
+Credentials are stored using the system keyring first (macOS Keychain / Linux Secret Service / Windows Credential Manager), with fallback to encrypted file storage at `~/.config/imgrab/credentials.enc`.
+
+### logout - Logout from Registry
+
+Logout from a registry by removing stored credentials.
+
+```bash
+./imgrab logout [registry]
+```
+
+**Arguments:**
+- `registry`: Optional, registry address (default: Docker Hub)
+
+**Examples:**
+```bash
+# Logout from Docker Hub
+./imgrab logout
+
+# Logout from private registry
+./imgrab logout registry.example.com
+```
