@@ -51,7 +51,7 @@ jobs:
           GOARCH: ${{ matrix.goarch }}
         run: |
           output_name="imgrab-${{ matrix.os }}-${{ matrix.arch }}${{ matrix.ext }}"
-          go build -ldflags="-s -w" -o "$output_name" .
+          go build -ldflags="-s -w" -trimpath -o "$output_name" .
           echo "Built: $output_name"
 
       - name: Release
